@@ -220,9 +220,9 @@ ggml.dir: build/chatglm.cpp
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
 	cd out && mkdir -p sentencepiece.dir && cd ../build && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/sentencepiece_processor.cc.o ../out/sentencepiece.dir/sentencepiece_processor.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/error.cc.o ../out/sentencepiece.dir/error.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/model_interface.cc.o ../out/sentencepiece.dir/model_interface.o
+	find third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir -name '*.cc.o' -exec cp {} ../out/sentencepiece.dir/ \; && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/sentencepiece.pb.cc.o ../out/sentencepiece.dir/sentencepiece.pb.o && \
+  	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/sentencepiece_model.pb.cc.o ../out/sentencepiece.dir/sentencepiece_model.pb.o
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir

@@ -262,8 +262,7 @@ libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	binding.o
 
 clean:
-	rm -rf *.o
-	rm -rf *.a
+	rm -rf out
 	rm -rf build
 
 

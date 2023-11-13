@@ -220,7 +220,17 @@ ggml.dir: build/chatglm.cpp
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
 	cd out && mkdir -p sentencepiece.dir && cd ../build && \
-	find third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir -name '*.cc.o' -exec cp {} ../out/sentencepiece.dir/ \; && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/sentencepiece_processor.cc.o ../out/sentencepiece.dir/sentencepiece_processor.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/error.cc.o ../out/sentencepiece.dir/error.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/model_factory.cc.o ../out/sentencepiece.dir/model_factory.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/model_interface.cc.o ../out/sentencepiece.dir/model_interface.o  && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/bpe_model.cc.o ../out/sentencepiece.dir/bpe_model.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/char_model.cc.o ../out/sentencepiece.dir/char_model.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/word_model.cc.o ../out/sentencepiece.dir/word_model.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/unigram_model.cc.o ../out/sentencepiece.dir/unigram_model.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/util.cc.o ../out/sentencepiece.dir/util.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/normalizer.cc.o ../out/sentencepiece.dir/normalizer.o && \
+	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/filesystem.cc.o ../out/sentencepiece.dir/filesystem.o && \
 	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/sentencepiece.pb.cc.o ../out/sentencepiece.dir/sentencepiece.pb.o && \
   	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/sentencepiece_model.pb.cc.o ../out/sentencepiece.dir/sentencepiece_model.pb.o
 
@@ -262,6 +272,8 @@ libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	binding.o
 
 clean:
+	rm -rf *.o
+	rm -rf *.a
 	rm -rf out
 	rm -rf build
 

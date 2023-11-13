@@ -29,7 +29,7 @@ func New(model string) (*Chatglm, error) {
 	return llm, nil
 }
 
-func (llm *Chatglm) chat(history []string, opts ...GenerationOption) (string, error) {
+func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	out := make([]byte, 1)
 	success := C.chat(llm.pipeline, (**C.char)(unsafe.Pointer(&history[0])), C.int(len(history)),
@@ -44,7 +44,7 @@ func (llm *Chatglm) chat(history []string, opts ...GenerationOption) (string, er
 	return res, nil
 }
 
-func (llm *Chatglm) generate(prompt string, opts ...GenerationOption) (string, error) {
+func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	var out []byte
 	result := C.generate(llm.pipeline, C.CString(prompt), C.int(opt.MaxLength), C.int(opt.MaxContextLength), C.bool(opt.DoSample),

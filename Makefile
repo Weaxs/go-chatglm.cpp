@@ -35,9 +35,10 @@ endif
 
 BUILD_TYPE?=
 # keep standard at C17 and C++17
-CFLAGS   = -I./chatglm.cpp -I. -O3 -DNDEBUG -std=c17 -fPIC
-CXXFLAGS = -I./chatglm.cpp -I. -I./chatglm.cpp/third_party -I./third_party -O3 -DNDEBUG -std=c++17 -fPIC
+CFLAGS   = -I. -O3 -DNDEBUG -std=c17 -fPIC
+CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC
 LDFLAGS  =
+CMAKE_ARGS = -DCMAKE_C_COMPILER=$(shell which gcc) -DCMAKE_CXX_COMPILER=$(shell which g++)
 
 # warnings
 CFLAGS   += -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -Wno-unused-function

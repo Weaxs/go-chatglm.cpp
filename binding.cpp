@@ -42,55 +42,61 @@ void* load_model(const char *name) {
     return new chatglm::Pipeline(name);
 }
 
-int chat(void* pipe_pr, const char** history, int history_count,
-           int max_length, int max_context_length, bool do_sample, int top_k, float top_p, float temperature,
-           float repetition_penalty, int num_threads, bool stream, char* result) {
-    std::vector<std::string> vectors;
-    if (history_count > 0) {
-        vectors = create_vector(history, history_count);
-    }
-
+int chat(void* pipe_pr, const char** history, int history_count, void* params_ptr, bool stream, char* result) {
+    std::vector<std::string> vectors = create_vector(history, history_count);
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
-    chatglm::GenerationConfig gen_config;
-    gen_config.max_length = max_length;
-    gen_config.max_context_length = max_context_length;
-    gen_config.do_sample = do_sample;
-    gen_config.top_k = top_k;
-    gen_config.top_p = top_p;
-    gen_config.temperature = temperature;
-    gen_config.repetition_penalty = repetition_penalty;
-    gen_config.num_threads = num_threads;
+    chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
 
-    chatglm::PerfStreamer *streamer = nullptr;
-    if (stream) {
-        streamer = new chatglm::PerfStreamer();
-    }
-    std::string res = pipe_p->chat(vectors, gen_config, streamer);
+    // TODO: support stream
+    std::string res = pipe_p->chat(vectors, *params);
     strcpy(result, res.c_str());
+
+    vectors.clear();
+
     return 0;
 }
 
-int generate(void* pipe_pr,  const char *prompt,
-               int max_length, int max_context_length, bool do_sample, int top_k, float top_p,
-               float temperature, float repetition_penalty, int num_threads, bool stream,  char* result) {
+int generate(void* pipe_pr, const char *prompt, void* params_ptr, bool stream, char* result) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
-    chatglm::GenerationConfig gen_config;
-    gen_config.max_length = max_length;
-    gen_config.max_context_length = max_context_length;
-    gen_config.do_sample = do_sample;
-    gen_config.top_k = top_k;
-    gen_config.top_p = top_p;
-    gen_config.temperature = temperature;
-    gen_config.repetition_penalty = repetition_penalty;
-    gen_config.num_threads = num_threads;
+    chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
 
-    chatglm::PerfStreamer *streamer = nullptr;
-    if (stream) {
-        streamer = new chatglm::PerfStreamer();
-    }
-    std::string res = pipe_p->generate(std::string(prompt), gen_config, streamer);
+    // TODO: support streamer
+//    chatglm::PerfStreamer *streamer = nullptr;
+//    if (stream) {
+//        streamer = new chatglm::PerfStreamer;
+//    }
+    std::string res = pipe_p->generate(std::string(prompt), *params);
     strcpy(result, res.c_str());
+
+//    if (streamer != nullptr) {
+//        delete streamer;
+//    }
+
     return 0;
+}
+
+void* chatglm_allocate_params(int max_length, int max_context_length, bool do_sample, int top_k,
+                                float top_p, float temperature, float repetition_penalty, int num_threads) {
+    chatglm::GenerationConfig* gen_config = new chatglm::GenerationConfig;
+    gen_config->max_length = max_length;
+    gen_config->max_context_length = max_context_length;
+    gen_config->do_sample = do_sample;
+    gen_config->top_k = top_k;
+    gen_config->top_p = top_p;
+    gen_config->temperature = temperature;
+    gen_config->repetition_penalty = repetition_penalty;
+    gen_config->num_threads = num_threads;
+    return gen_config;
+}
+
+void chatglm_free_params(void* params_ptr) {
+    chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
+    delete params;
+}
+
+void chatglm_free_model(void* pipe_pr) {
+    chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
+    delete pipe_p;
 }
 
 

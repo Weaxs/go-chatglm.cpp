@@ -42,12 +42,12 @@ void* load_model(const char *name) {
     return new chatglm::Pipeline(name);
 }
 
-int chat(void* pipe_pr, const char** history, int history_count, void* params_ptr, bool stream, char* result) {
+// TODO: support stream
+int chat(void* pipe_pr, const char** history, int history_count, void* params_ptr, char* result) {
     std::vector<std::string> vectors = create_vector(history, history_count);
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
 
-    // TODO: support stream
     std::string res = pipe_p->chat(vectors, *params);
     strcpy(result, res.c_str());
 
@@ -56,21 +56,26 @@ int chat(void* pipe_pr, const char** history, int history_count, void* params_pt
     return 0;
 }
 
-int generate(void* pipe_pr, const char *prompt, void* params_ptr, bool stream, char* result) {
+// TODO: support streamer
+int generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
 
-    // TODO: support streamer
-//    chatglm::PerfStreamer *streamer = nullptr;
-//    if (stream) {
-//        streamer = new chatglm::PerfStreamer;
-//    }
     std::string res = pipe_p->generate(std::string(prompt), *params);
     strcpy(result, res.c_str());
 
-//    if (streamer != nullptr) {
-//        delete streamer;
-//    }
+    return 0;
+}
+
+int get_embedding(void* pipe_pr, void* params_ptr, const char *prompt, int * result) {
+    chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
+    chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
+
+    std::vector<int> embeddings = pipe_p->tokenizer->encode(prompt, params->max_length);
+
+    for (size_t i = 0; i < embeddings.size(); i++) {
+        result[i]=embeddings[i];
+    }
 
     return 0;
 }

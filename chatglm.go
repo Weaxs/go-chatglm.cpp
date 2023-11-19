@@ -46,9 +46,11 @@ func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, er
 		pass = &reversePrompt[0]
 	}
 
+	if opt.MaxContextLength == 0 {
+		opt.MaxContextLength = 99999999
+	}
 	out := make([]byte, opt.MaxContextLength)
-	success := C.chat(llm.pipeline, pass, C.int(reverseCount), params,
-		C.bool(opt.Stream), (*C.char)(unsafe.Pointer(&out[0])))
+	success := C.chat(llm.pipeline, pass, C.int(reverseCount), params, (*C.char)(unsafe.Pointer(&out[0])))
 
 	if success != 0 {
 		return "", fmt.Errorf("model chat failed")
@@ -64,9 +66,11 @@ func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, e
 	params := allocateParams(opt)
 	defer freeParams(params)
 
+	if opt.MaxContextLength == 0 {
+		opt.MaxContextLength = 99999999
+	}
 	out := make([]byte, opt.MaxContextLength)
-	result := C.generate(llm.pipeline, C.CString(prompt), params,
-		C.bool(opt.Stream), (*C.char)(unsafe.Pointer(&out[0])))
+	result := C.generate(llm.pipeline, C.CString(prompt), params, (*C.char)(unsafe.Pointer(&out[0])))
 
 	if result != 0 {
 		return "", fmt.Errorf("model generate failed")
@@ -74,6 +78,23 @@ func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, e
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
 	return res, nil
 
+}
+
+func (llm *Chatglm) Embeddings(text string, opts ...GenerationOption) ([]int, error) {
+	opt := NewGenerationOptions(opts...)
+	input := C.CString(text)
+	if opt.MaxLength == 0 {
+		opt.MaxLength = 99999999
+	}
+	ints := make([]int, opt.MaxLength)
+
+	params := allocateParams(opt)
+	ret := C.get_embedding(llm.pipeline, params, input, (*C.int)(unsafe.Pointer(&ints[0])))
+	if ret != 0 {
+		return ints, fmt.Errorf("embedding inference failed")
+	}
+
+	return ints, nil
 }
 
 func (llm *Chatglm) Free() {

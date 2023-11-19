@@ -12,9 +12,7 @@ You need to make sure there are `make`, `cmake`, `gcc` command in your machine, 
 
 If you want to run on **Windows OS**, you can use [cygwin](https://www.cygwin.com/).
 
-CMAKE > 3.8
-
-CCC/C++17 > 5.1.0
+> **`cmake` > 3.8**  and  **`gcc` > 5.1.0**  (support C++17)
 
 ### Not Support LoRA model
 go-chatglm.cpp is not anymore compatible with `LoRA model`, but it woks ONLY with the model which merged by LoRA model and base model.

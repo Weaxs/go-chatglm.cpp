@@ -131,15 +131,17 @@ ifeq ($(BUILD_TYPE),openblas)
 	CMAKE_ARGS+=-DCHATGLM_BLAS=ON -DCHATGLM_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS=/usr/include/openblas
 endif
 
-#ifeq ($(BUILD_TYPE),blis)
-#	EXTRA_LIBS=
-#	CMAKE_ARGS+=-DCHATGLM_BLAS=ON -DCHATGLM_BLAS_VENDOR=FLAME
-#endif
 
 ifeq ($(BUILD_TYPE),cublas)
 	EXTRA_LIBS=
-	CMAKE_ARGS+=-DCHATGLM_CUBLAS=ON
+	CMAKE_ARGS+=-DGGML_CUBLAS=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
+endif
+
+ifeq ($(BUILD_TYPE),openblas)
+	EXTRA_LIBS=
+	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
+#	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 endif
 
 ifeq ($(BUILD_TYPE),hipblas)
@@ -149,21 +151,22 @@ ifeq ($(BUILD_TYPE),hipblas)
 	EXTRA_LIBS=
 	GPU_TARGETS ?= gfx900,gfx90a,gfx1030,gfx1031,gfx1100
 	AMDGPU_TARGETS ?= "$(GPU_TARGETS)"
-	CMAKE_ARGS+=-DCHATGLM_HIPBLAS=ON -DAMDGPU_TARGETS="$(AMDGPU_TARGETS)" -DGPU_TARGETS="$(GPU_TARGETS)"
+	CMAKE_ARGS+=-DGGML_HIPBLAS=ON -DAMDGPU_TARGETS="$(AMDGPU_TARGETS)" -DGPU_TARGETS="$(GPU_TARGETS)"
 	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 	GGML_CUDA_OBJ_PATH=CMakeFiles/ggml-rocm.dir/ggml-cuda.cu.o
 endif
 
-#ifeq ($(BUILD_TYPE),clblas)
-#	EXTRA_LIBS=
-#	CMAKE_ARGS+=-DCHATGLM_CLBLAST=ON
-#	EXTRA_TARGETS+=chatglm.cpp/third_party/ggml-opencl.o
-#endif
+ifeq ($(BUILD_TYPE),clblas)
+	EXTRA_LIBS=
+	CMAKE_ARGS+=-DGGML_CLBLAST=ON
+	EXTRA_TARGETS+=ggml.dir/ggml-opencl.o
+endif
+
 
 ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CGO_LDFLAGS+="-framework Accelerate -framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders"
-	CMAKE_ARGS+=-DCHATGLM_METAL=ON
+	CMAKE_ARGS+=-DCGGML_METAL=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
 endif
 
@@ -283,6 +286,6 @@ ggllm-test-model.bin:
 	wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
 
 test: ggllm-test-model.bin libbinding.a
-	 TEST_MODEL=ggllm-test-model.bin go test .
+	 go mod tidy && TEST_MODEL=ggllm-test-model.bin go test .
 
 

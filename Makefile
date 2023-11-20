@@ -282,3 +282,7 @@ clean:
 ggllm-test-model.bin:
 	wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
 
+test: ggllm-test-model.bin libbinding.a
+	 TEST_MODEL=ggllm-test-model.bin go test .
+
+

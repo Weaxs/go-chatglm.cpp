@@ -2,11 +2,17 @@ package chatglm
 
 import (
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
 func TestGenerate(t *testing.T) {
-	chatglm, err := New("./chatglm3-ggml-q4_0.bin")
+	testModelPath := os.Getenv("TEST_MODEL")
+	if testModelPath == "" {
+		testModelPath = "./chatglm3-ggml-q4_0.bin"
+	}
+
+	chatglm, err := New(testModelPath)
 	if err != nil {
 		assert.Fail(t, "load model failed.")
 	}
@@ -19,7 +25,12 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	chatglm, err := New("./chatglm3-ggml-q4_0.bin")
+	testModelPath := os.Getenv("TEST_MODEL")
+	if testModelPath == "" {
+		testModelPath = "./chatglm3-ggml-q4_0.bin"
+	}
+
+	chatglm, err := New(testModelPath)
 	if err != nil {
 		assert.Fail(t, "load model failed.")
 	}

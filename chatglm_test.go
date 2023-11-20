@@ -13,6 +13,7 @@ func TestGenerate(t *testing.T) {
 	}
 
 	chatglm, err := New(testModelPath)
+	defer chatglm.Free()
 	if err != nil {
 		assert.Fail(t, "load model failed.")
 	}
@@ -31,6 +32,7 @@ func TestStreamGenerate(t *testing.T) {
 	}
 
 	chatglm, err := New(testModelPath)
+	defer chatglm.Free()
 	if err != nil {
 		assert.Fail(t, "load model failed.")
 	}
@@ -54,6 +56,7 @@ func TestChat(t *testing.T) {
 	}
 
 	chatglm, err := New(testModelPath)
+	defer chatglm.Free()
 	if err != nil {
 		assert.Fail(t, "load model failed.")
 	}
@@ -84,6 +87,7 @@ func TestStreamChat(t *testing.T) {
 	}
 
 	chatglm, err := New(testModelPath)
+	defer chatglm.Free()
 	if err != nil {
 		assert.Fail(t, "load model failed.")
 	}
@@ -113,4 +117,24 @@ func TestStreamChat(t *testing.T) {
 
 	history = append(history, ret)
 	assert.Len(t, history, 4)
+}
+
+func TestEmbedding(t *testing.T) {
+	testModelPath, exist := os.LookupEnv("TEST_MODEL")
+	if !exist {
+		testModelPath = "./chatglm3-ggml-q4_0.bin"
+	}
+
+	chatglm, err := New(testModelPath)
+	defer chatglm.Free()
+	if err != nil {
+		assert.Fail(t, "load model failed.")
+	}
+
+	maxLength := 1024
+	embeddings, err := chatglm.Embeddings("你好", SetMaxLength(1024))
+	if err != nil {
+		assert.Fail(t, "embedding failed.")
+	}
+	assert.Len(t, embeddings, maxLength)
 }

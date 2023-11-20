@@ -83,4 +83,4 @@ jobs:
         run: cmake --version
       - name: Test
         run: |
-          CGO_LDFLAGS="-framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders" make BUILD_TYPE=metal test
+          make BUILD_TYPE=metal test

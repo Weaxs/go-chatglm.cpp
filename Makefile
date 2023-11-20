@@ -139,7 +139,7 @@ endif
 ifeq ($(BUILD_TYPE),cublas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DCHATGLM_CUBLAS=ON
-	EXTRA_TARGETS+=chatglm.cpp/ggml-cuda.o
+	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 endif
 
 ifeq ($(BUILD_TYPE),hipblas)
@@ -150,7 +150,7 @@ ifeq ($(BUILD_TYPE),hipblas)
 	GPU_TARGETS ?= gfx900,gfx90a,gfx1030,gfx1031,gfx1100
 	AMDGPU_TARGETS ?= "$(GPU_TARGETS)"
 	CMAKE_ARGS+=-DCHATGLM_HIPBLAS=ON -DAMDGPU_TARGETS="$(AMDGPU_TARGETS)" -DGPU_TARGETS="$(GPU_TARGETS)"
-	EXTRA_TARGETS+=chatglm.cpp/ggml-cuda.o
+	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 	GGML_CUDA_OBJ_PATH=CMakeFiles/ggml-rocm.dir/ggml-cuda.cu.o
 endif
 
@@ -164,7 +164,7 @@ ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CGO_LDFLAGS+="-framework Accelerate -framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders"
 	CMAKE_ARGS+=-DCHATGLM_METAL=ON
-	EXTRA_TARGETS+=chatglm.cpp/ggml-metal.o
+	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
 endif
 
 ifdef CLBLAST_DIR

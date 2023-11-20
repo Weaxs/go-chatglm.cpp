@@ -9,7 +9,6 @@ type GenerationOptions struct {
 	Temperature       float32
 	RepetitionPenalty float32
 	NumThreads        int
-	Stream            bool
 }
 
 type GenerationOption func(g *GenerationOptions)
@@ -23,7 +22,6 @@ var DefaultGenerationOptions *GenerationOptions = &GenerationOptions{
 	Temperature:       0.95,
 	RepetitionPenalty: 1.0,
 	NumThreads:        0,
-	Stream:            false,
 }
 
 func NewGenerationOptions(opts ...GenerationOption) *GenerationOptions {
@@ -79,11 +77,5 @@ func SetRepetitionPenalty(repetitionPenalty float32) GenerationOption {
 func SetNumThreads(numThreads int) GenerationOption {
 	return func(g *GenerationOptions) {
 		g.NumThreads = numThreads
-	}
-}
-
-func SetStream(stream bool) GenerationOption {
-	return func(g *GenerationOptions) {
-		g.Stream = stream
 	}
 }

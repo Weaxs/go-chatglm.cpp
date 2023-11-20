@@ -11,7 +11,13 @@ void* load_model(const char *name);
 
 int chat(void* pipe_pr, const char** history, int history_count, void* params_ptr, char* result);
 
+void* stream_chat(void* pipe_pr, const char** history, int history_count, void* params_ptr);
+
 int generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result);
+
+void* stream_generate(void* pipe_pr, const char *prompt, void* params_ptr);
+
+int stream_to_string(void* steamer, char* result);
 
 int get_embedding(void* pipe_pr, void* params_ptr, const char *prompt, int * result);
 

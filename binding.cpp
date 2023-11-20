@@ -42,7 +42,6 @@ void* load_model(const char *name) {
     return new chatglm::Pipeline(name);
 }
 
-// TODO: support stream
 int chat(void* pipe_pr, const char** history, int history_count, void* params_ptr, char* result) {
     std::vector<std::string> vectors = create_vector(history, history_count);
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
@@ -56,7 +55,18 @@ int chat(void* pipe_pr, const char** history, int history_count, void* params_pt
     return 0;
 }
 
-// TODO: support streamer
+void* stream_chat(void* pipe_pr, const char** history, int history_count, void* params_ptr) {
+    std::vector<std::string> vectors = create_vector(history, history_count);
+    chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
+    chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
+
+    chatglm::PerfStreamer* streamer = new chatglm::PerfStreamer;
+    pipe_p->chat(vectors, *params, streamer);
+
+    vectors.clear();
+    return streamer;
+}
+
 int generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
@@ -64,6 +74,23 @@ int generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result) 
     std::string res = pipe_p->generate(std::string(prompt), *params);
     strcpy(result, res.c_str());
 
+    return 0;
+}
+
+void* stream_generate(void* pipe_pr, const char *prompt, void* params_ptr) {
+    chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
+    chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
+
+    chatglm::PerfStreamer* streamer = new chatglm::PerfStreamer;
+    pipe_p->generate(std::string(prompt), *params, streamer);
+    return streamer;
+}
+
+int stream_to_string(void* steamer_pr, char* result) {
+    chatglm::PerfStreamer* streamer_p = (chatglm::PerfStreamer*) steamer_pr;
+
+    std::string res = streamer_p->to_string();
+    strcpy(result, res.c_str());
     return 0;
 }
 

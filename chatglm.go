@@ -18,6 +18,7 @@ import (
 
 type Chatglm struct {
 	pipeline unsafe.Pointer
+	stream   unsafe.Pointer
 }
 
 func New(model string) (*Chatglm, error) {
@@ -61,6 +62,25 @@ func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, er
 	return res, nil
 }
 
+func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) error {
+	opt := NewGenerationOptions(opts...)
+	params := allocateParams(opt)
+	defer freeParams(params)
+
+	reverseCount := len(history)
+	reversePrompt := make([]*C.char, reverseCount)
+	var pass **C.char
+	for i, s := range history {
+		cs := C.CString(s)
+		reversePrompt[i] = cs
+		pass = &reversePrompt[0]
+	}
+
+	streamer := C.stream_chat(llm.pipeline, pass, C.int(reverseCount), params)
+	llm.stream = streamer
+	return nil
+}
+
 func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
@@ -77,7 +97,36 @@ func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, e
 	}
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
 	return res, nil
+}
 
+func (llm *Chatglm) StreamGenerate(prompt string, opts ...GenerationOption) error {
+	opt := NewGenerationOptions(opts...)
+	params := allocateParams(opt)
+	defer freeParams(params)
+
+	streamer := C.stream_generate(llm.pipeline, C.CString(prompt), params)
+	llm.stream = streamer
+	return nil
+}
+
+func (llm *Chatglm) GetStream(opts ...GenerationOption) (string, error) {
+	if llm.stream == nil {
+		return "", fmt.Errorf("stream is nil")
+	}
+
+	opt := NewGenerationOptions(opts...)
+	params := allocateParams(opt)
+	defer freeParams(params)
+	if opt.MaxContextLength == 0 {
+		opt.MaxContextLength = 99999999
+	}
+	out := make([]byte, opt.MaxContextLength)
+	result := C.stream_to_string(llm.stream, (*C.char)(unsafe.Pointer(&out[0])))
+	if result != 0 {
+		return "", fmt.Errorf("get stream failed")
+	}
+	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
+	return res, nil
 }
 
 func (llm *Chatglm) Embeddings(text string, opts ...GenerationOption) ([]int, error) {
@@ -91,7 +140,7 @@ func (llm *Chatglm) Embeddings(text string, opts ...GenerationOption) ([]int, er
 	params := allocateParams(opt)
 	ret := C.get_embedding(llm.pipeline, params, input, (*C.int)(unsafe.Pointer(&ints[0])))
 	if ret != 0 {
-		return ints, fmt.Errorf("embedding inference failed")
+		return ints, fmt.Errorf("embedding failed")
 	}
 
 	return ints, nil

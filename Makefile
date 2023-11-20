@@ -126,24 +126,21 @@ ifneq ($(filter armv8%,$(UNAME_M)),)
 	CFLAGS += -mfp16-format=ieee -mno-unaligned-access
 endif
 
+# Build Acceleration
 ifeq ($(BUILD_TYPE),openblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DCHATGLM_BLAS=ON -DCHATGLM_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS=/usr/include/openblas
 endif
-
-
 ifeq ($(BUILD_TYPE),cublas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CUBLAS=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 endif
-
 ifeq ($(BUILD_TYPE),openblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
 #	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 endif
-
 ifeq ($(BUILD_TYPE),hipblas)
 	ROCM_HOME ?= "/opt/rocm"
 	CXX="$(ROCM_HOME)"/llvm/bin/clang++
@@ -155,18 +152,15 @@ ifeq ($(BUILD_TYPE),hipblas)
 	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 	GGML_CUDA_OBJ_PATH=CMakeFiles/ggml-rocm.dir/ggml-cuda.cu.o
 endif
-
 ifeq ($(BUILD_TYPE),clblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CLBLAST=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-opencl.o
 endif
-
-
 ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CGO_LDFLAGS+="-framework Accelerate -framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders"
-	CMAKE_ARGS+=-DCGGML_METAL=ON
+	CMAKE_ARGS+=-DGGML_METAL=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
 endif
 

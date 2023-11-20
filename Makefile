@@ -101,10 +101,6 @@ ifndef CHATGLM_NO_ACCELERATE
 		LDFLAGS += -framework Accelerate
 	endif
 endif
-ifdef CHATGLM_OPENBLAS
-	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
-	LDFLAGS += -lopenblas
-endif
 ifdef CHATGLM_GPROF
 	CFLAGS   += -pg
 	CXXFLAGS += -pg
@@ -127,10 +123,6 @@ ifneq ($(filter armv8%,$(UNAME_M)),)
 endif
 
 # Build Acceleration
-ifeq ($(BUILD_TYPE),openblas)
-	EXTRA_LIBS=
-	CMAKE_ARGS+=-DCHATGLM_BLAS=ON -DCHATGLM_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS=/usr/include/openblas
-endif
 ifeq ($(BUILD_TYPE),cublas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CUBLAS=ON
@@ -139,7 +131,8 @@ endif
 ifeq ($(BUILD_TYPE),openblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
-#	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
+	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
+    LDFLAGS += -lopenblas
 endif
 ifeq ($(BUILD_TYPE),hipblas)
 	ROCM_HOME ?= "/opt/rocm"
@@ -284,6 +277,6 @@ ggllm-test-model.bin:
 	wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
 
 test: ggllm-test-model.bin libbinding.a
-	 go mod tidy && TEST_MODEL=ggllm-test-model.bin go test .
+	go mod tidy && $(CGO_LDFLAGS) TEST_MODEL=ggllm-test-model.bin go test .
 
 

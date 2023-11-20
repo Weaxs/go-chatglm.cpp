@@ -259,9 +259,12 @@ ggml.dir/ggml-opencl.o: ggml.dir
 	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-opencl.cpp.o ../out/ggml.dir/ggml-opencl.o
 
 # ggml-metal
-ggml.dir/ggml-metal.o: ggml.dir
-	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-metal.m.o ../out/ggml.dir/ggml-metal.o && \
-	cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-backend.c.o ../out/ggml.dir/ggml-backend.o
+ggml.dir/ggml-metal.o: ggml.dir ggml.dir/ggml-backend.o
+	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-metal.m.o ../out/ggml.dir/ggml-metal.o
+
+# ggml-backend
+ggml.dir/ggml-backend.o:
+	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-backend.c.o ../out/ggml.dir/ggml-backend.o
 
 libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	ar src libbinding.a  \

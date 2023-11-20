@@ -6,18 +6,29 @@ import (
 	"testing"
 )
 
-func TestGenerate(t *testing.T) {
+var chatglm *Chatglm
+
+func setup() {
 	testModelPath, exist := os.LookupEnv("TEST_MODEL")
 	if !exist {
 		testModelPath = "./chatglm3-ggml-q4_0.bin"
 	}
 
-	chatglm, err := New(testModelPath)
-	defer chatglm.Free()
+	var err error
+	chatglm, err = New(testModelPath)
 	if err != nil {
-		assert.Fail(t, "load model failed.")
+		panic("load model failed.")
 	}
+}
 
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	defer chatglm.Free()
+	os.Exit(code)
+}
+
+func TestGenerate(t *testing.T) {
 	ret, err := chatglm.Generate("2+2等于多少")
 	if err != nil {
 		assert.Fail(t, "generate failed.")
@@ -26,18 +37,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestStreamGenerate(t *testing.T) {
-	testModelPath, exist := os.LookupEnv("TEST_MODEL")
-	if !exist {
-		testModelPath = "./chatglm3-ggml-q4_0.bin"
-	}
-
-	chatglm, err := New(testModelPath)
-	defer chatglm.Free()
-	if err != nil {
-		assert.Fail(t, "load model failed.")
-	}
-
-	err = chatglm.StreamGenerate("2+2等于多少")
+	err := chatglm.StreamGenerate("2+2等于多少")
 	if err != nil {
 		assert.Fail(t, "stream generate failed.")
 	}
@@ -50,17 +50,6 @@ func TestStreamGenerate(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	testModelPath, exist := os.LookupEnv("TEST_MODEL")
-	if !exist {
-		testModelPath = "./chatglm3-ggml-q4_0.bin"
-	}
-
-	chatglm, err := New(testModelPath)
-	defer chatglm.Free()
-	if err != nil {
-		assert.Fail(t, "load model failed.")
-	}
-
 	history := []string{"2+2等于多少"}
 	ret, err := chatglm.Chat(history)
 	if err != nil {
@@ -81,19 +70,8 @@ func TestChat(t *testing.T) {
 }
 
 func TestStreamChat(t *testing.T) {
-	testModelPath, exist := os.LookupEnv("TEST_MODEL")
-	if !exist {
-		testModelPath = "./chatglm3-ggml-q4_0.bin"
-	}
-
-	chatglm, err := New(testModelPath)
-	defer chatglm.Free()
-	if err != nil {
-		assert.Fail(t, "load model failed.")
-	}
-
 	history := []string{"2+2等于多少"}
-	err = chatglm.StreamChat(history)
+	err := chatglm.StreamChat(history)
 	if err != nil {
 		assert.Fail(t, "first chat failed")
 	}
@@ -120,17 +98,6 @@ func TestStreamChat(t *testing.T) {
 }
 
 func TestEmbedding(t *testing.T) {
-	testModelPath, exist := os.LookupEnv("TEST_MODEL")
-	if !exist {
-		testModelPath = "./chatglm3-ggml-q4_0.bin"
-	}
-
-	chatglm, err := New(testModelPath)
-	defer chatglm.Free()
-	if err != nil {
-		assert.Fail(t, "load model failed.")
-	}
-
 	maxLength := 1024
 	embeddings, err := chatglm.Embeddings("你好", SetMaxLength(1024))
 	if err != nil {

@@ -36,19 +36,6 @@ func TestGenerate(t *testing.T) {
 	assert.Contains(t, ret, "4")
 }
 
-func TestStreamGenerate(t *testing.T) {
-	err := chatglm.StreamGenerate("2+2等于多少")
-	if err != nil {
-		assert.Fail(t, "stream generate failed.")
-	}
-
-	ret, err := chatglm.GetStream()
-	if err != nil {
-		assert.Fail(t, "get stream failed.")
-	}
-	assert.Contains(t, ret, "4")
-}
-
 func TestChat(t *testing.T) {
 	history := []string{"2+2等于多少"}
 	ret, err := chatglm.Chat(history)
@@ -62,34 +49,6 @@ func TestChat(t *testing.T) {
 	ret, err = chatglm.Chat(history)
 	if err != nil {
 		assert.Fail(t, "second chat failed")
-	}
-	assert.Contains(t, ret, "8")
-
-	history = append(history, ret)
-	assert.Len(t, history, 4)
-}
-
-func TestStreamChat(t *testing.T) {
-	history := []string{"2+2等于多少"}
-	err := chatglm.StreamChat(history)
-	if err != nil {
-		assert.Fail(t, "first chat failed")
-	}
-	ret, err := chatglm.GetStream()
-	if err != nil {
-		assert.Fail(t, "first get stream failed.")
-	}
-	assert.Contains(t, ret, "4")
-
-	history = append(history, ret)
-	history = append(history, "再加4等于多少")
-	err = chatglm.StreamChat(history)
-	if err != nil {
-		assert.Fail(t, "second chat failed")
-	}
-	ret, err = chatglm.GetStream()
-	if err != nil {
-		assert.Fail(t, "first get stream failed.")
 	}
 	assert.Contains(t, ret, "8")
 

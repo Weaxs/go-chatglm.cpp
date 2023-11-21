@@ -30,6 +30,22 @@ void sigint_handler(int signo) {
 }
 #endif
 
+// stream for callback go function, copy from chatglm::TextStreamer
+class TextBindStreamer : public chatglm::BaseStreamer {
+public:
+    TextBindStreamer(chatglm::BaseTokenizer *tokenizer, void* draft_pipe)
+            : draft_pipe(draft_pipe), tokenizer_(tokenizer), is_prompt_(true), print_len_(0) {}
+    void put(const std::vector<int> &output_ids) override;
+    void end() override;
+
+private:
+    void* draft_pipe;
+    chatglm::BaseTokenizer *tokenizer_;
+    bool is_prompt_;
+    std::vector<int> token_cache_;
+    int print_len_;
+};
+
 std::vector<std::string> create_vector(const char** strings, int count) {
     auto vec = new std::vector<std::string>;
     for (int i = 0; i < count; i++) {
@@ -55,16 +71,18 @@ int chat(void* pipe_pr, const char** history, int history_count, void* params_pt
     return 0;
 }
 
-void* stream_chat(void* pipe_pr, const char** history, int history_count, void* params_ptr) {
+int stream_chat(void* pipe_pr, const char** history, int history_count,void* params_ptr, char* result) {
     std::vector<std::string> vectors = create_vector(history, history_count);
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
 
-    chatglm::PerfStreamer* streamer = new chatglm::PerfStreamer;
-    pipe_p->chat(vectors, *params, streamer);
+    TextBindStreamer* text_stream = new TextBindStreamer(pipe_p->tokenizer.get(), pipe_pr);
+
+    std::string res = pipe_p->chat(vectors, *params, text_stream);
+    strcpy(result, res.c_str());
 
     vectors.clear();
-    return streamer;
+    return 0;
 }
 
 int generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result) {
@@ -77,20 +95,15 @@ int generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result) 
     return 0;
 }
 
-void* stream_generate(void* pipe_pr, const char *prompt, void* params_ptr) {
+int stream_generate(void* pipe_pr, const char *prompt, void* params_ptr, char* result) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
 
-    chatglm::PerfStreamer* streamer = new chatglm::PerfStreamer;
-    pipe_p->generate(std::string(prompt), *params, streamer);
-    return streamer;
-}
+    TextBindStreamer* text_stream = new TextBindStreamer(pipe_p->tokenizer.get(), pipe_pr);
 
-int stream_to_string(void* steamer_pr, char* result) {
-    chatglm::PerfStreamer* streamer_p = (chatglm::PerfStreamer*) steamer_pr;
-
-    std::string res = streamer_p->to_string();
+    std::string res = pipe_p->generate(std::string(prompt), *params, text_stream);
     strcpy(result, res.c_str());
+
     return 0;
 }
 
@@ -130,6 +143,57 @@ void chatglm_free_model(void* pipe_pr) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     delete pipe_p;
 }
+
+// copy from chatglm::TextStreamer
+void TextBindStreamer::put(const std::vector<int> &output_ids) {
+    if (is_prompt_) {
+        // skip prompt
+        is_prompt_ = false;
+        return;
+    }
+
+    static const std::vector<char> puncts{',', '!', ':', ';', '?'};
+
+    token_cache_.insert(token_cache_.end(), output_ids.begin(), output_ids.end());
+    std::string text = tokenizer_->decode(token_cache_);
+    if (text.empty()) {
+        return;
+    }
+
+    std::string printable_text;
+    if (text.back() == '\n') {
+        // flush the cache after newline
+        printable_text = text.substr(print_len_);
+
+        token_cache_.clear();
+        print_len_ = 0;
+    } else if (std::find(puncts.begin(), puncts.end(), text.back()) != puncts.end()) {
+        // last symbol is a punctuation, hold on
+    } else if (text.size() >= 3 && text.compare(text.size() - 3, 3, "�") == 0) {
+        // ends with an incomplete token, hold on
+    } else {
+        printable_text = text.substr(print_len_);
+        print_len_ = text.size();
+    }
+
+    // callback go function
+    if (!streamCallback(draft_pipe, (char*)printable_text.c_str())) {
+        return;
+    }
+}
+
+// copy from chatglm::TextStreamer
+void TextBindStreamer::end() {
+    std::string text = tokenizer_->decode(token_cache_);
+    // callback go function
+    if (!streamCallback(draft_pipe, (char*)text.substr(print_len_).c_str())) {
+        return;
+    }
+    is_prompt_ = true;
+    token_cache_.clear();
+    print_len_ = 0;
+}
+
 
 
 

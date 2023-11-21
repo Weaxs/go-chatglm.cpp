@@ -9,6 +9,7 @@ type GenerationOptions struct {
 	Temperature       float32
 	RepetitionPenalty float32
 	NumThreads        int
+	StreamCallback    func(string) bool
 }
 
 type GenerationOption func(g *GenerationOptions)
@@ -22,6 +23,7 @@ var DefaultGenerationOptions *GenerationOptions = &GenerationOptions{
 	Temperature:       0.95,
 	RepetitionPenalty: 1.0,
 	NumThreads:        0,
+	StreamCallback:    nil,
 }
 
 func NewGenerationOptions(opts ...GenerationOption) *GenerationOptions {
@@ -77,5 +79,11 @@ func SetRepetitionPenalty(repetitionPenalty float32) GenerationOption {
 func SetNumThreads(numThreads int) GenerationOption {
 	return func(g *GenerationOptions) {
 		g.NumThreads = numThreads
+	}
+}
+
+func SetStreamCallback(callback func(string) bool) GenerationOption {
+	return func(g *GenerationOptions) {
+		g.StreamCallback = callback
 	}
 }

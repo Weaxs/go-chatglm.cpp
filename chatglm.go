@@ -13,14 +13,17 @@ import "C"
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"unsafe"
 )
 
 type Chatglm struct {
 	pipeline unsafe.Pointer
-	stream   unsafe.Pointer
+	// default stream, of course you can customize stream by  StreamCallback
+	stream strings.Builder
 }
 
+// New create llm struct
 func New(model string) (*Chatglm, error) {
 	modelPath := C.CString(model)
 	defer C.free(unsafe.Pointer(modelPath))
@@ -33,6 +36,7 @@ func New(model string) (*Chatglm, error) {
 	return llm, nil
 }
 
+// Chat sync chat
 func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
@@ -62,7 +66,7 @@ func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, er
 	return res, nil
 }
 
-func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) error {
+func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
 	defer freeParams(params)
@@ -76,9 +80,24 @@ func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) error
 		pass = &reversePrompt[0]
 	}
 
-	streamer := C.stream_chat(llm.pipeline, pass, C.int(reverseCount), params)
-	llm.stream = streamer
-	return nil
+	if opt.StreamCallback != nil {
+		addStreamCallback(llm.pipeline, opt.StreamCallback)
+	} else {
+		addStreamCallback(llm.pipeline, defaultStreamCallback(llm))
+	}
+
+	if opt.MaxContextLength == 0 {
+		opt.MaxContextLength = 99999999
+	}
+	out := make([]byte, opt.MaxContextLength)
+	success := C.stream_chat(llm.pipeline, pass, C.int(reverseCount), params, (*C.char)(unsafe.Pointer(&out[0])))
+	if success != 0 {
+		return "", fmt.Errorf("model chat failed")
+	}
+	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
+	res = strings.TrimPrefix(res, " ")
+	res = strings.TrimPrefix(res, "\n")
+	return res, nil
 }
 
 func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, error) {
@@ -99,31 +118,25 @@ func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, e
 	return res, nil
 }
 
-func (llm *Chatglm) StreamGenerate(prompt string, opts ...GenerationOption) error {
+func (llm *Chatglm) StreamGenerate(prompt string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
 	defer freeParams(params)
 
-	streamer := C.stream_generate(llm.pipeline, C.CString(prompt), params)
-	llm.stream = streamer
-	return nil
-}
-
-func (llm *Chatglm) GetStream(opts ...GenerationOption) (string, error) {
-	if llm.stream == nil {
-		return "", fmt.Errorf("stream is nil")
+	if opt.StreamCallback != nil {
+		addStreamCallback(llm.pipeline, opt.StreamCallback)
+	} else {
+		addStreamCallback(llm.pipeline, defaultStreamCallback(llm))
 	}
 
-	opt := NewGenerationOptions(opts...)
-	params := allocateParams(opt)
-	defer freeParams(params)
 	if opt.MaxContextLength == 0 {
 		opt.MaxContextLength = 99999999
 	}
 	out := make([]byte, opt.MaxContextLength)
-	result := C.stream_to_string(llm.stream, (*C.char)(unsafe.Pointer(&out[0])))
+	result := C.generate(llm.pipeline, C.CString(prompt), params, (*C.char)(unsafe.Pointer(&out[0])))
+
 	if result != 0 {
-		return "", fmt.Errorf("get stream failed")
+		return "", fmt.Errorf("model generate failed")
 	}
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
 	return res, nil
@@ -158,4 +171,43 @@ func allocateParams(opt *GenerationOptions) unsafe.Pointer {
 
 func freeParams(params unsafe.Pointer) {
 	C.chatglm_free_params(params)
+}
+
+var (
+	m         sync.RWMutex
+	callbacks = map[unsafe.Pointer]func(string) bool{}
+)
+
+//export streamCallback
+func streamCallback(pipeline unsafe.Pointer, printableText *C.char) C.bool {
+	m.RLock()
+	defer m.RUnlock()
+
+	if callback, ok := callbacks[pipeline]; ok {
+		return C.bool(callback(C.GoString(printableText)))
+	}
+
+	return C.bool(true)
+}
+
+func addStreamCallback(pipeline unsafe.Pointer, callback func(string) bool) {
+	m.Lock()
+	defer m.Unlock()
+
+	if callback == nil {
+		delete(callbacks, pipeline)
+	} else {
+		callbacks[pipeline] = callback
+	}
+}
+
+// return default stream callback
+func defaultStreamCallback(llm *Chatglm) func(string) bool {
+	return func(text string) bool {
+		_, err := llm.stream.WriteString(text)
+		if err != nil {
+			return false
+		}
+		return true
+	}
 }

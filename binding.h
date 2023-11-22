@@ -19,12 +19,12 @@ int stream_generate(void* pipe_pr, const char *prompt, void* params_ptr, char* r
 
 int get_embedding(void* pipe_pr, void* params_ptr, const char *prompt, int * result);
 
-void* chatglm_allocate_params(int max_length, int max_context_length, bool do_sample, int top_k,
-                                float top_p, float temperature, float repetition_penalty, int num_threads);
+void* allocate_params(int max_length, int max_context_length, bool do_sample, int top_k,
+                      float top_p, float temperature, float repetition_penalty, int num_threads);
 
-void chatglm_free_params(void* params_ptr);
+void free_params(void* params_ptr);
 
-void chatglm_free_model(void* pipe_pr);
+void free_model(void* pipe_pr);
 
 #ifdef __cplusplus
 }

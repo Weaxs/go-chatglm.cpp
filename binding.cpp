@@ -121,7 +121,7 @@ int get_embedding(void* pipe_pr, void* params_ptr, const char *prompt, int * res
     return 0;
 }
 
-void* chatglm_allocate_params(int max_length, int max_context_length, bool do_sample, int top_k,
+void* allocate_params(int max_length, int max_context_length, bool do_sample, int top_k,
                                 float top_p, float temperature, float repetition_penalty, int num_threads) {
     chatglm::GenerationConfig* gen_config = new chatglm::GenerationConfig;
     gen_config->max_length = max_length;
@@ -135,12 +135,12 @@ void* chatglm_allocate_params(int max_length, int max_context_length, bool do_sa
     return gen_config;
 }
 
-void chatglm_free_params(void* params_ptr) {
+void free_params(void* params_ptr) {
     chatglm::GenerationConfig* params = (chatglm::GenerationConfig*) params_ptr;
     delete params;
 }
 
-void chatglm_free_model(void* pipe_pr) {
+void free_model(void* pipe_pr) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
     delete pipe_p;
 }

@@ -81,10 +81,11 @@ func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) (stri
 	}
 
 	if opt.StreamCallback != nil {
-		addStreamCallback(llm.pipeline, opt.StreamCallback)
+		setStreamCallback(llm.pipeline, opt.StreamCallback)
 	} else {
-		addStreamCallback(llm.pipeline, defaultStreamCallback(llm))
+		setStreamCallback(llm.pipeline, defaultStreamCallback(llm))
 	}
+	defer setStreamCallback(llm.pipeline, nil)
 
 	if opt.MaxContextLength == 0 {
 		opt.MaxContextLength = 99999999
@@ -115,6 +116,8 @@ func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, e
 		return "", fmt.Errorf("model generate failed")
 	}
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
+	res = strings.TrimPrefix(res, " ")
+	res = strings.TrimPrefix(res, "\n")
 	return res, nil
 }
 
@@ -124,21 +127,24 @@ func (llm *Chatglm) StreamGenerate(prompt string, opts ...GenerationOption) (str
 	defer freeParams(params)
 
 	if opt.StreamCallback != nil {
-		addStreamCallback(llm.pipeline, opt.StreamCallback)
+		setStreamCallback(llm.pipeline, opt.StreamCallback)
 	} else {
-		addStreamCallback(llm.pipeline, defaultStreamCallback(llm))
+		setStreamCallback(llm.pipeline, defaultStreamCallback(llm))
 	}
+	defer setStreamCallback(llm.pipeline, nil)
 
 	if opt.MaxContextLength == 0 {
 		opt.MaxContextLength = 99999999
 	}
 	out := make([]byte, opt.MaxContextLength)
-	result := C.generate(llm.pipeline, C.CString(prompt), params, (*C.char)(unsafe.Pointer(&out[0])))
+	result := C.stream_generate(llm.pipeline, C.CString(prompt), params, (*C.char)(unsafe.Pointer(&out[0])))
 
 	if result != 0 {
 		return "", fmt.Errorf("model generate failed")
 	}
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
+	res = strings.TrimPrefix(res, " ")
+	res = strings.TrimPrefix(res, "\n")
 	return res, nil
 }
 
@@ -160,17 +166,17 @@ func (llm *Chatglm) Embeddings(text string, opts ...GenerationOption) ([]int, er
 }
 
 func (llm *Chatglm) Free() {
-	C.chatglm_free_model(llm.pipeline)
+	C.free_model(llm.pipeline)
 }
 
 func allocateParams(opt *GenerationOptions) unsafe.Pointer {
-	return C.chatglm_allocate_params(C.int(opt.MaxLength), C.int(opt.MaxContextLength), C.bool(opt.DoSample),
+	return C.allocate_params(C.int(opt.MaxLength), C.int(opt.MaxContextLength), C.bool(opt.DoSample),
 		C.int(opt.TopK), C.float(opt.TopP), C.float(opt.Temperature), C.float(opt.RepetitionPenalty),
 		C.int(opt.NumThreads))
 }
 
 func freeParams(params unsafe.Pointer) {
-	C.chatglm_free_params(params)
+	C.free_params(params)
 }
 
 var (
@@ -190,7 +196,7 @@ func streamCallback(pipeline unsafe.Pointer, printableText *C.char) C.bool {
 	return C.bool(true)
 }
 
-func addStreamCallback(pipeline unsafe.Pointer, callback func(string) bool) {
+func setStreamCallback(pipeline unsafe.Pointer, callback func(string) bool) {
 	m.Lock()
 	defer m.Unlock()
 

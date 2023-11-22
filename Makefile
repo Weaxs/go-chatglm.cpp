@@ -2,15 +2,27 @@ INCLUDE_PATH := $(abspath ./)
 LIBRARY_PATH := $(abspath ./)
 
 ifndef UNAME_S
-UNAME_S := $(shell uname -s)
+	ifeq ($(OS),Windows_NT)
+		UNAME_S := $(shell ver)
+	else
+		UNAME_S := $(shell uname -s)
+	endif
 endif
 
 ifndef UNAME_P
-UNAME_P := $(shell uname -p)
+	ifeq ($(OS),Windows_NT)
+		UNAME_P := $(shell wmic cpu get caption)
+	else
+		UNAME_P := $(shell uname -p)
+	endif
 endif
 
 ifndef UNAME_M
-UNAME_M := $(shell uname -m)
+	ifeq ($(OS),Windows_NT)
+		UNAME_M := $(PROCESSOR_ARCHITECTURE)
+	else
+		UNAME_M := $(shell uname -s)
+	endif
 endif
 
 CCV := $(shell $(CC) --version | head -n 1)
@@ -19,7 +31,7 @@ CXXV := $(shell $(CXX) --version | head -n 1)
 # Mac OS + Arm can report x86_64
 # ref: https://github.com/ggerganov/whisper.cpp/issues/66#issuecomment-1282546789
 ifeq ($(UNAME_S),Darwin)
-	ifneq ($(UNAME_P),arm))
+	ifneq ($(UNAME_P),arm)
 		SYSCTL_M := $(shell sysctl -n hw.optional.arm64 2>/dev/null)
 		ifeq ($(SYSCTL_M),1)
 			# UNAME_P := arm
@@ -35,41 +47,14 @@ endif
 
 BUILD_TYPE?=
 # keep standard at C17 and C++17
-CFLAGS   = -I. -O3 -DNDEBUG -std=c17 -fPIC
-CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC
+CFLAGS   = -I. -O3 -DNDEBUG -std=c17 -fPIC -pthread
+CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC -pthread
 LDFLAGS  =
 CMAKE_ARGS = -DCMAKE_C_COMPILER=$(shell which gcc) -DCMAKE_CXX_COMPILER=$(shell which g++)
 
 # warnings
 CFLAGS   += -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -Wno-unused-function
 CXXFLAGS += -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function
-
-# OS specific
-# TODO: support Windows
-ifeq ($(UNAME_S),Linux)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),Darwin)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),FreeBSD)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),NetBSD)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),OpenBSD)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),Haiku)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
 
 # GPGPU specific
 GGML_CUDA_OBJ_PATH=third_party/ggml/src/CMakeFiles/ggml.dir/ggml-cuda.cu.o
@@ -91,14 +76,6 @@ ifneq ($(filter ppc64%,$(UNAME_M)),)
 	# Require c++23's std::byteswap for big-endian support.
 	ifeq ($(UNAME_M),ppc64)
 		CXXFLAGS += -std=c++23 -DGGML_BIG_ENDIAN
-	endif
-endif
-ifndef CHATGLM_NO_ACCELERATE
-	# Mac M1 - include Accelerate framework.
-	# `-framework Accelerate` works on Mac Intel as well, with negliable performance boost (as of the predict time).
-	ifeq ($(UNAME_S),Darwin)
-		CFLAGS  += -DGGML_USE_ACCELERATE
-		LDFLAGS += -framework Accelerate
 	endif
 endif
 ifdef CHATGLM_GPROF
@@ -133,6 +110,7 @@ ifeq ($(BUILD_TYPE),openblas)
 	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
 	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
     LDFLAGS += -lopenblas
+    CGO_TAGS="openblas"
 endif
 ifeq ($(BUILD_TYPE),hipblas)
 	ROCM_HOME ?= "/opt/rocm"
@@ -149,37 +127,28 @@ ifeq ($(BUILD_TYPE),clblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CLBLAST=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-opencl.o
+	CGO_TAGS="cublas"
 endif
 ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
-	CGO_LDFLAGS+="-framework Accelerate -framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders"
 	CMAKE_ARGS+=-DGGML_METAL=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
+	CGO_TAGS="metal"
 endif
 
 ifdef CLBLAST_DIR
 	CMAKE_ARGS+=-DCLBlast_dir=$(CLBLAST_DIR)
 endif
 
-# TODO: support Windows
-ifeq ($(GPU_TESTS),true)
-	CGO_LDFLAGS="-lcublas -lcudart -L/usr/local/cuda/lib64/"
-	TEST_LABEL=gpu
-else
-	TEST_LABEL=!gpu
-endif
-
 #
 # Print build information
 #
-
 $(info I chatglm.cpp build info: )
 $(info I UNAME_S:  $(UNAME_S))
 $(info I UNAME_P:  $(UNAME_P))
 $(info I UNAME_M:  $(UNAME_M))
 $(info I CFLAGS:   $(CFLAGS))
 $(info I CXXFLAGS: $(CXXFLAGS))
-$(info I CGO_LDFLAGS:  $(CGO_LDFLAGS))
 $(info I LDFLAGS:  $(LDFLAGS))
 $(info I BUILD_TYPE:  $(BUILD_TYPE))
 $(info I CMAKE_ARGS:  $(CMAKE_ARGS))
@@ -277,6 +246,6 @@ ggllm-test-model.bin:
 	wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
 
 test: ggllm-test-model.bin libbinding.a
-	go mod tidy && CGO_LDFLAGS=$(CGO_LDFLAGS) TEST_MODEL=ggllm-test-model.bin go test .
+	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test -tags ${CGO_TAGS}
 
 

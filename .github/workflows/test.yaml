@@ -24,7 +24,30 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      # You can test your matrix by printing the current Go version
+      - name: Display Go version
+        run: go version
+      - name: Display GCC version
+        run: gcc --version
+      - name: Display CMake version
+        run: cmake --version
+      - name: Test
+        run: |
+          make test
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        go-version: [ 'stable' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
       - name: Display Go version
         run: go version
       - name: Display GCC version
@@ -49,7 +72,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      # You can test your matrix by printing the current Go version
       - name: Display Go version
         run: go version
       - name: Display GCC version

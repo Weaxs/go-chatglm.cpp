@@ -3,6 +3,7 @@ package chatglm
 import (
 	"github.com/stretchr/testify/assert"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -36,6 +37,21 @@ func TestGenerate(t *testing.T) {
 	assert.Contains(t, ret, "4")
 }
 
+func TestStreamGenerate(t *testing.T) {
+	prompt := "2+2等于多少"
+	ret, err := chatglm.StreamGenerate(prompt)
+	if err != nil {
+		assert.Fail(t, "stream generate failed.")
+	}
+	streamOut := chatglm.stream.String()
+	defer chatglm.stream.Reset()
+
+	streamOut = strings.TrimPrefix(streamOut, " ")
+	streamOut = strings.TrimPrefix(streamOut, "\n")
+	assert.Contains(t, streamOut, "4")
+	assert.Equal(t, streamOut, ret)
+}
+
 func TestChat(t *testing.T) {
 	history := []string{"2+2等于多少"}
 	ret, err := chatglm.Chat(history)
@@ -51,6 +67,38 @@ func TestChat(t *testing.T) {
 		assert.Fail(t, "second chat failed")
 	}
 	assert.Contains(t, ret, "8")
+
+	history = append(history, ret)
+	assert.Len(t, history, 4)
+}
+
+func TestChatStream(t *testing.T) {
+	history := []string{"2+2等于多少"}
+	out1 := strings.Builder{}
+	ret, err := chatglm.StreamChat(history, SetStreamCallback(func(s string) bool {
+		out1.WriteString(s)
+		return true
+	}))
+	if err != nil {
+		assert.Fail(t, "first chat failed")
+	}
+	outStr1 := out1.String()
+	outStr1 = strings.TrimPrefix(outStr1, " ")
+	outStr1 = strings.TrimPrefix(outStr1, "\n")
+	assert.Contains(t, ret, "4")
+	assert.Equal(t, outStr1, ret)
+
+	history = append(history, ret)
+	history = append(history, "再加4等于多少")
+	ret, err = chatglm.StreamChat(history)
+	if err != nil {
+		assert.Fail(t, "second chat failed")
+	}
+	out2 := chatglm.stream.String()
+	out2 = strings.TrimPrefix(out2, " ")
+	out2 = strings.TrimPrefix(out2, "\n")
+	assert.Contains(t, ret, "8")
+	assert.Equal(t, ret, out2)
 
 	history = append(history, ret)
 	assert.Len(t, history, 4)

@@ -243,7 +243,7 @@ clean:
 
 DOWNLOAD_TARGETS=ggllm-test-model.bin
 ifeq ($(OS),Windows_NT)
-	DOWNLOAD_TARGETS:=windwos/ggllm-test-model.bin
+	DOWNLOAD_TARGETS:=windows/ggllm-test-model.bin
 endif
 
 ggllm-test-model.bin:

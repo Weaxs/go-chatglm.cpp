@@ -243,7 +243,7 @@ clean:
 
 
 ggllm-test-model.bin:
-	curl -s -O https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -o ggllm-test-model.bin
+	curl -s -o ggllm-test-model.bin https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin
 
 test: ggllm-test-model.bin libbinding.a
 	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test -tags ${CGO_TAGS} .

@@ -34,7 +34,7 @@ jobs:
         run: |
           make test
 
-  windows:
+  windows-latest:
     runs-on: windows-latest
     strategy:
       matrix:

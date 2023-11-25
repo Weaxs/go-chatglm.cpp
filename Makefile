@@ -241,9 +241,14 @@ clean:
 	rm -rf out
 	rm -rf build
 
+ifeq ($(OS),Windows_NT)
+	DOWNLOAD_COMMAND = $(shell Invoke-WebRequest -Uri "https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin" -OutFile "ggllm-test-model.bin")
+else
+	DOWNLOAD_COMMAND = $(shell wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin)
+endif
 
 ggllm-test-model.bin:
-	curl -s -o ggllm-test-model.bin https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin
+	$(DOWNLOAD_COMMAND)
 
 test: ggllm-test-model.bin libbinding.a
 	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test -tags ${CGO_TAGS} .

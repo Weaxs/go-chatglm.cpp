@@ -249,7 +249,7 @@ endif
 ggllm-test-model.bin:
 	wget -q -N https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
 windows/ggllm-test-model.bin:
-	Invoke-WebRequest -Uri "https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin" -OutFile "ggllm-test-model.bin"
+	powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin' -OutFile 'ggllm-test-model.bin'"
 
 test: $(DOWNLOAD_TARGETS) libbinding.a
 	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} .

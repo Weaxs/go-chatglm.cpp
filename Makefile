@@ -244,7 +244,7 @@ clean:
 DOWNLOAD_TARGETS=ggllm-test-model.bin
 ifeq ($(OS),Windows_NT)
 	DOWNLOAD_TARGETS:=windwos/ggllm-test-model.bin
-else
+endif
 
 ggllm-test-model.bin:
 	wget -q -N https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin

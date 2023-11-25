@@ -14,7 +14,7 @@ type GenerationOptions struct {
 
 type GenerationOption func(g *GenerationOptions)
 
-var DefaultGenerationOptions *GenerationOptions = &GenerationOptions{
+var DefaultGenerationOptions GenerationOptions = GenerationOptions{
 	MaxLength:         2048,
 	MaxContextLength:  512,
 	DoSample:          true,
@@ -29,9 +29,9 @@ var DefaultGenerationOptions *GenerationOptions = &GenerationOptions{
 func NewGenerationOptions(opts ...GenerationOption) *GenerationOptions {
 	p := DefaultGenerationOptions
 	for _, opt := range opts {
-		opt(p)
+		opt(&p)
 	}
-	return p
+	return &p
 }
 
 func SetMaxLength(maxLength int) GenerationOption {

@@ -110,7 +110,7 @@ ifeq ($(BUILD_TYPE),openblas)
 	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
 	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
     LDFLAGS += -lopenblas
-    CGO_TAGS="openblas"
+    CGO_TAGS="-tags openblas"
 endif
 ifeq ($(BUILD_TYPE),hipblas)
 	ROCM_HOME ?= "/opt/rocm"
@@ -127,13 +127,13 @@ ifeq ($(BUILD_TYPE),clblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CLBLAST=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-opencl.o
-	CGO_TAGS="cublas"
+	CGO_TAGS="-tags cublas"
 endif
 ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_METAL=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
-	CGO_TAGS="metal"
+	CGO_TAGS="-tags metal"
 endif
 
 ifdef CLBLAST_DIR
@@ -241,16 +241,15 @@ clean:
 	rm -rf out
 	rm -rf build
 
+DOWNLOAD_TARGETS=ggllm-test-model.bin
 ifeq ($(OS),Windows_NT)
-	DOWNLOAD_COMMAND = $(shell Invoke-WebRequest -Uri "https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin" -OutFile "ggllm-test-model.bin")
+	DOWNLOAD_TARGETS:=windwos/ggllm-test-model.bin
 else
-	DOWNLOAD_COMMAND = $(shell wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin)
-endif
 
 ggllm-test-model.bin:
-	$(DOWNLOAD_COMMAND)
+	wget -q -N https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
+windows/ggllm-test-model.bin:
+	Invoke-WebRequest -Uri "https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin" -OutFile "ggllm-test-model.bin"
 
-test: ggllm-test-model.bin libbinding.a
-	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test -tags ${CGO_TAGS} .
-
-
+test: $(DOWNLOAD_TARGETS) libbinding.a
+	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} .

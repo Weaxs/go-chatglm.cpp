@@ -243,9 +243,9 @@ clean:
 
 
 ggllm-test-model.bin:
-	wget -q https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin -O ggllm-test-model.bin
+	curl -o ggllm-test-model.bin https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin
 
 test: ggllm-test-model.bin libbinding.a
-	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test -tags ${CGO_TAGS}
+	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test -tags ${CGO_TAGS} .
 
 

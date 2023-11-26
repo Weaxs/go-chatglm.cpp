@@ -30,6 +30,8 @@ jobs:
         run: gcc --version
       - name: Display CMake version
         run: cmake --version
+      - name: Install dependencies
+        run: go mod tidy
       - name: Test
         run: |
           make test
@@ -54,6 +56,8 @@ jobs:
         run: gcc --version
       - name: Display CMake version
         run: cmake --version
+      - name: Install dependencies
+        run: go mod tidy
       - name: Test
         run: |
           make test
@@ -78,6 +82,8 @@ jobs:
         run: gcc --version
       - name: Display CMake version
         run: cmake --version
+      - name: Install dependencies
+        run: go mod tidy
       - name: Test
         run: |
           make test
@@ -103,6 +109,8 @@ jobs:
         run: gcc --version
       - name: Display CMake version
         run: cmake --version
+      - name: Install dependencies
+        run: go mod tidy
       - name: Test
         run: |
           make BUILD_TYPE=metal test

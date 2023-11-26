@@ -252,4 +252,4 @@ windows/ggllm-test-model.bin:
 	powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin' -OutFile 'ggllm-test-model.bin'"
 
 test: $(DOWNLOAD_TARGETS) libbinding.a
-	go mod tidy && TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} .
+	TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} .

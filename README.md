@@ -1,4 +1,7 @@
 # go-chatglm.cpp
+[![GoDoc](https://godoc.org/github.com/Weaxs/go-chatglm.cpp?status.svg)](https://godoc.org/github.com/Weaxs/go-chatglm.cpp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Weaxs/go-chatglm.cpp)](https://goreportcard.com/report/github.com/Weaxs/go-chatglm.cpp)
+[![License](https://img.shields.io/github/license/Weaxs/go-chatglm.cpp)](https://github.com/Weaxs/go-chatglm.cpp/blob/main/LICENSE)
 
 [chatglm.cpp](https://github.com/li-plus/chatglm.cpp) golang bindings.
 

@@ -110,7 +110,7 @@ ifeq ($(BUILD_TYPE),openblas)
 	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
 	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
     LDFLAGS += -lopenblas
-    CGO_TAGS="-tags openblas"
+    CGO_TAGS=-tags openblas
 endif
 ifeq ($(BUILD_TYPE),hipblas)
 	ROCM_HOME ?= "/opt/rocm"
@@ -127,13 +127,13 @@ ifeq ($(BUILD_TYPE),clblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CLBLAST=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-opencl.o
-	CGO_TAGS="-tags cublas"
+	CGO_TAGS=-tags cublas
 endif
 ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_METAL=ON
 	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
-	CGO_TAGS="-tags metal"
+	CGO_TAGS=-tags metal
 endif
 
 ifdef CLBLAST_DIR
@@ -222,7 +222,8 @@ ggml.dir/ggml-opencl.o: ggml.dir
 
 # ggml-metal
 ggml.dir/ggml-metal.o: ggml.dir ggml.dir/ggml-backend.o
-	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-metal.m.o ../out/ggml.dir/ggml-metal.o
+	cd build && cp -rf bin/ggml-metal.metal ../ggml-metal.metal && \
+	cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-metal.m.o ../out/ggml.dir/ggml-metal.o
 
 # ggml-backend
 ggml.dir/ggml-backend.o:

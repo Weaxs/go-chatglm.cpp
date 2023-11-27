@@ -7,7 +7,10 @@ import (
 	"testing"
 )
 
-var chatglm *Chatglm
+var (
+	chatglm   *Chatglm
+	modelType string
+)
 
 func setup() {
 	testModelPath, exist := os.LookupEnv("TEST_MODEL")
@@ -20,6 +23,7 @@ func setup() {
 	if err != nil {
 		panic("load model failed.")
 	}
+	modelType = chatglm.ModelType()
 }
 
 func TestMain(m *testing.M) {
@@ -51,29 +55,31 @@ func TestStreamGenerate(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	history := []string{"2+2等于多少"}
-	ret, err := chatglm.Chat(history)
+	var messages []*ChatMessage
+	messages = append(messages, NewUserMsg("2+2等于多少"))
+	ret, err := chatglm.Chat(messages)
 	if err != nil {
 		assert.Fail(t, "first chat failed")
 	}
 	assert.Contains(t, ret, "4")
 
-	history = append(history, ret)
-	history = append(history, "再加4等于多少")
-	ret, err = chatglm.Chat(history)
+	messages = append(messages, NewAssistantMsg(ret, modelType))
+	messages = append(messages, NewUserMsg("再加4等于多少"))
+	ret, err = chatglm.Chat(messages)
 	if err != nil {
 		assert.Fail(t, "second chat failed")
 	}
 	assert.Contains(t, ret, "8")
 
-	history = append(history, ret)
-	assert.Len(t, history, 4)
+	messages = append(messages, NewAssistantMsg(ret, modelType))
+	assert.Len(t, messages, 4)
 }
 
 func TestChatStream(t *testing.T) {
-	history := []string{"2+2等于多少"}
+	var messages []*ChatMessage
+	messages = append(messages, NewUserMsg("2+2等于多少"))
 	out1 := strings.Builder{}
-	ret, err := chatglm.StreamChat(history, SetStreamCallback(func(s string) bool {
+	ret, err := chatglm.StreamChat(messages, SetStreamCallback(func(s string) bool {
 		out1.WriteString(s)
 		return true
 	}))
@@ -86,9 +92,9 @@ func TestChatStream(t *testing.T) {
 	assert.Contains(t, ret, "4")
 	assert.Contains(t, outStr1, "4")
 
-	history = append(history, ret)
-	history = append(history, "再加4等于多少")
-	ret, err = chatglm.StreamChat(history)
+	messages = append(messages, NewAssistantMsg(ret, modelType))
+	messages = append(messages, NewUserMsg("再加4等于多少"))
+	ret, err = chatglm.StreamChat(messages)
 	if err != nil {
 		assert.Fail(t, "second chat failed")
 	}
@@ -98,15 +104,62 @@ func TestChatStream(t *testing.T) {
 	assert.Contains(t, ret, "8")
 	assert.Contains(t, out2, "8")
 
-	history = append(history, ret)
-	assert.Len(t, history, 4)
+	messages = append(messages, NewAssistantMsg(ret, modelType))
+	assert.Len(t, messages, 4)
 }
 
 func TestEmbedding(t *testing.T) {
 	maxLength := 1024
-	embeddings, err := chatglm.Embeddings("你好", SetMaxLength(1024))
+	embeddings, err := chatglm.Embeddings("你好", SetMaxLength(maxLength))
 	if err != nil {
 		assert.Fail(t, "embedding failed.")
 	}
 	assert.Len(t, embeddings, maxLength)
+}
+
+func TestSystemToolCall(t *testing.T) {
+	file, err := os.ReadFile("examples/system/function_call.txt")
+	if err != nil {
+		return
+	}
+	var messages []*ChatMessage
+	messages = append(messages, NewSystemMsg(string(file)))
+	messages = append(messages, NewUserMsg("生成一个随机数"))
+
+	ret, err := chatglm.Chat(messages, SetDoSample(false))
+	if err != nil {
+		assert.Fail(t, "call system tool failed.")
+	}
+	assert.Contains(t, ret, "```python\ntool_call(seed=42, range=(0, 100))\n```")
+	messages = append(messages, NewAssistantMsg(ret, modelType))
+	messages = append(messages, NewObservationMsg("22"))
+
+	ret, err = chatglm.Chat(messages, SetDoSample(false))
+	if err != nil {
+		assert.Fail(t, "call system tool failed.")
+	}
+	assert.Contains(t, ret, "22")
+}
+
+func TestCodeInterpreter(t *testing.T) {
+	file, err := os.ReadFile("examples/system/code_interpreter.txt")
+	if err != nil {
+		return
+	}
+	var messages []*ChatMessage
+	messages = append(messages, NewSystemMsg(string(file)))
+	messages = append(messages, NewUserMsg("列出100以内的所有质数"))
+	ret, err := chatglm.Chat(messages, SetDoSample(false))
+	if err != nil {
+		assert.Fail(t, "call code interpreter failed.")
+	}
+	messages = append(messages, NewAssistantMsg(ret, modelType))
+	assert.Equal(t, ret, "好的，我会为您列出100以内的所有质数。\\n\\n质数是指只能被1和它本身整除的大于1的整数。例如，2、3、5、7等都是质数。\\n\\n让我们开始吧！")
+	messages = append(messages, NewObservationMsg("[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]"))
+
+	ret, err = chatglm.Chat(messages, SetDoSample(false))
+	if err != nil {
+		assert.Fail(t, "call code interpreter failed.")
+	}
+	assert.Contains(t, ret, "2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97")
 }

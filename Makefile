@@ -164,7 +164,7 @@ prepare:
 
 # build chatglm.cpp
 build/chatglm.cpp: prepare
-	cd build && CC="$(CC)" CXX="$(CXX)" cmake ../chatglm.cpp $(CMAKE_ARGS) && VERBOSE=1 cmake --build . -j --config Release
+	cd build && CC="$(CC)" CXX="$(CXX)" cmake $(CMAKE_ARGS) ../chatglm.cpp && VERBOSE=1 cmake --build . -j --config Release
 
 # chatglm.dir
 chatglm.dir: build/chatglm.cpp

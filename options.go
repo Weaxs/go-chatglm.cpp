@@ -6,8 +6,8 @@ const (
 	RoleSystem      = "system"
 	RoleObservation = "observation"
 
-	TypeFunction = "Function"
-	TypeCode     = "Code"
+	TypeFunction = "function"
+	TypeCode     = "code"
 
 	DELIMITER = "<|delimiter|>"
 )

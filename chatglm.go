@@ -48,10 +48,9 @@ func NewAssistantMsg(input string, modelType string) *ChatMessage {
 
 	ciPos := strings.Index(input, DELIMITER)
 	if ciPos != 0 {
-		content := removeSpecialTokens(input[:ciPos])
-		code := removeSpecialTokens(input[ciPos+len(DELIMITER):])
-		var toolCalls []*ToolCallMessage
-		toolCalls = append(toolCalls, &ToolCallMessage{Type: TypeCode, Code: &CodeMessage{code}})
+		content := input[:ciPos]
+		code := input[ciPos+len(DELIMITER):]
+		toolCalls := []*ToolCallMessage{{Type: TypeCode, Code: &CodeMessage{code}}}
 		result.Content = content
 		result.ToolCalls = toolCalls
 	}

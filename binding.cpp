@@ -21,16 +21,15 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <io.h>
-#include <stdio.h>
+#include <signal.h>
 #include <windows.h>
 #endif
 
-#ifdef GGML_USE_CUBLAS
+#ifdef GGML_CUBLAS
 #include <ggml-cuda.h>
 #endif
 
-#ifdef GGML_USE_METAL
+#ifdef GGML_METAL
 #include <ggml-metal.h>
 #endif
 

@@ -15,11 +15,23 @@
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
 #include <signal.h>
 #include <unistd.h>
-#elif defined (_WIN32)
+#endif
+#if defined (_WIN32)
 #define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+#include <io.h>
+#include <stdio.h>
 #include <windows.h>
-#include <signal.h>
+#endif
+
+#ifdef GGML_USE_CUBLAS
+#include <ggml-cuda.h>
+#endif
+
+#ifdef GGML_USE_METAL
+#include <ggml-metal.h>
 #endif
 
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__)) || defined (_WIN32)

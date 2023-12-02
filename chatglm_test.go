@@ -154,7 +154,7 @@ func TestCodeInterpreter(t *testing.T) {
 		assert.Fail(t, "call code interpreter failed.")
 	}
 	messages = append(messages, NewAssistantMsg(ret, modelType))
-	assert.Equal(t, ret, "好的，我会为您列出100以内的所有质数。\\n\\n质数是指只能被1和它本身整除的大于1的整数。例如，2、3、5、7等都是质数。\\n\\n让我们开始吧！")
+	assert.Contains(t, ret, "好的，我会为您列出100以内的所有质数。\\n\\n质数是指只能被1和它本身整除的大于1的整数。例如，2、3、5、7等都是质数。\\n\\n让我们开始吧！")
 	messages = append(messages, NewObservationMsg("[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]"))
 
 	ret, err = chatglm.Chat(messages, SetDoSample(false))

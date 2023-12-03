@@ -137,6 +137,7 @@ ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_METAL=ON
 	CGO_TAGS=-tags metal
+	EXTRA_TARGETS+=ggml-metal
 endif
 
 ifdef CLBLAST_DIR
@@ -155,6 +156,7 @@ $(info I CXXFLAGS: $(CXXFLAGS))
 $(info I LDFLAGS:  $(LDFLAGS))
 $(info I BUILD_TYPE:  $(BUILD_TYPE))
 $(info I CMAKE_ARGS:  $(CMAKE_ARGS))
+$(info I EXTRA_TARGETS:  $(EXTRA_TARGETS))
 $(info I CC:       $(CCV))
 $(info I CXX:      $(CXXV))
 $(info I CP:       $(CP))
@@ -196,6 +198,10 @@ absl.dir: sentencepiece.dir
 	cd out && mkdir -p absl.dir && cd ../build && \
 	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o ../out/absl.dir/flag.o
 
+# ggml-metal
+ggml-metal: ggml.dir ggml.dir/ggml-backend.o
+	cd build && $(CP) bin/ggml-metal.metal ../ggml-metal.metal
+
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
 	$(CXX) $(CXXFLAGS) \
@@ -204,7 +210,7 @@ binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir prot
 	-I./chatglm.cpp/third_party/sentencepiece/src \
 	binding.cpp -o binding.o -c $(LDFLAGS)
 
-libbinding.a: prepare binding.o
+libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	ar src libbinding.a  \
 	out/chatglm.dir/chatglm.o \
 	out/ggml.dir/*.o out/sentencepiece.dir/*.o  \

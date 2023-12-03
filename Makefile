@@ -183,7 +183,8 @@ ggml.dir: build/chatglm.cpp
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
 	cd out && mkdir -p sentencepiece.dir && cd ../build && \
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o ../out/sentencepiece.dir/
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o ../out/sentencepiece.dir/ && \
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/*.cc.o ../out/sentencepiece.dir/
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir

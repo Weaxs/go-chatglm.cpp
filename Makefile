@@ -28,8 +28,10 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	CP := xcopy
+	DELIMITER := \\
 else
 	CP := cp
+	DELIMITER := /
 endif
 
 CCV := $(shell $(CC) --version | head -n 1)
@@ -174,47 +176,47 @@ build/chatglm.cpp: prepare
 
 # chatglm.dir
 chatglm.dir: build/chatglm.cpp
-	cd out && mkdir -p chatglm.dir && cd ../build && \
-	$(CP) CMakeFiles/chatglm.dir/chatglm.cpp.o ../out/chatglm.dir/chatglm.o
+	cd out && mkdir -p chatglm.dir && cd ..$(DELIMITER)build && \
+	$(CP) CMakeFiles$(DELIMITER)chatglm.dir$(DELIMITER)chatglm.cpp.o ..$(DELIMITER)out$(DELIMITER)chatglm.dir$(DELIMITER)
 
 # ggml.dir
 ggml.dir: build/chatglm.cpp
-	cd out && mkdir -p ggml.dir && cd ../build && \
-	$(CP) third_party/ggml/src/CMakeFiles/ggml.dir/*.c.o ../out/ggml.dir/
+	cd out && mkdir -p ggml.dir && cd ..$(DELIMITER)build && \
+	$(CP) third_party$(DELIMITER)ggml$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)ggml.dir$(DELIMITER)*.c.o ..$(DELIMITER)out$(DELIMITER)ggml.dir$(DELIMITER)
 
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
-	cd out && mkdir -p sentencepiece.dir && cd ../build && \
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o ../out/sentencepiece.dir/ && \
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/*.cc.o ../out/sentencepiece.dir/
+	cd out && mkdir -p sentencepiece.dir && cd ..$(DELIMITER)build && \
+	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)*.cc.o ..$(DELIMITER)out$(DELIMITER)sentencepiece.dir$(DELIMITER) && \
+	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)builtin_pb$(DELIMITER)*.cc.o ..$(DELIMITER)out$(DELIMITER)sentencepiece.dir$(DELIMITER)
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir
-	cd out && mkdir -p protobuf-lite.dir && cd ../build && \
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite/*.cc.o ../out/protobuf-lite.dir/
+	cd out && mkdir -p protobuf-lite.dir && cd ..$(DELIMITER)build && \
+	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)__$(DELIMITER)third_party$(DELIMITER)protobuf-lite$(DELIMITER)*.cc.o ..$(DELIMITER)out$(DELIMITER)protobuf-lite.dir$(DELIMITER)
 
 # absl.dir
 absl.dir: sentencepiece.dir
-	cd out && mkdir -p absl.dir && cd ../build && \
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o ../out/absl.dir/flag.o
+	cd out && mkdir -p absl.dir && cd ..$(DELIMITER)build && \
+	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)__$(DELIMITER)third_party$(DELIMITER)absl$(DELIMITER)flags$(DELIMITER)flag.cc.o ..$(DELIMITER)out$(DELIMITER)absl.dir$(DELIMITER)
 
 # ggml-metal
-ggml-metal: ggml.dir ggml.dir/ggml-backend.o
-	cd build && $(CP) bin/ggml-metal.metal ../ggml-metal.metal
+ggml-metal: ggml.dir
+	cd build && $(CP) bin$(DELIMITER)ggml-metal.metal ..$(DELIMITER)
 
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
 	$(CXX) $(CXXFLAGS) \
-	-I./chatglm.cpp  \
-	-I./chatglm.cpp/third_party/ggml/include/ggml \
-	-I./chatglm.cpp/third_party/sentencepiece/src \
+	-I.$(DELIMITER)chatglm.cpp  \
+	-I.$(DELIMITER)chatglm.cpp$(DELIMITER)third_party$(DELIMITER)ggml$(DELIMITER)include$(DELIMITER)ggml \
+	-I.$(DELIMITER)chatglm.cpp$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src \
 	binding.cpp -o binding.o -c $(LDFLAGS)
 
 libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	ar src libbinding.a  \
-	out/chatglm.dir/chatglm.o \
-	out/ggml.dir/*.o out/sentencepiece.dir/*.o  \
-	out/protobuf-lite.dir/*.o out/absl.dir/*.o \
+	out$(DELIMITER)chatglm.dir$(DELIMITER)*.o \
+	out$(DELIMITER)ggml.dir$(DELIMITER)*.o out$(DELIMITER)sentencepiece.dir$(DELIMITER)*.o  \
+	out$(DELIMITER)protobuf-lite.dir$(DELIMITER)*.o out$(DELIMITER)absl.dir$(DELIMITER)*.o \
 	binding.o
 
 clean:

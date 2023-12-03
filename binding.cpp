@@ -11,9 +11,9 @@
 #include <cstring>
 #include <fstream>
 #include <algorithm>
+#include <signal.h>
 
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
-#include <signal.h>
 #include <unistd.h>
 #endif
 #if defined (_WIN32)
@@ -21,7 +21,8 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <signal.h>
+#include <fcntl.h>
+#include <io.h>
 #include <windows.h>
 #endif
 

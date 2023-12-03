@@ -25,6 +25,13 @@ ifndef UNAME_M
 	endif
 endif
 
+
+ifeq ($(OS),Windows_NT)
+	CP := xcopy
+else
+	CP := cp
+endif
+
 CCV := $(shell $(CC) --version | head -n 1)
 CXXV := $(shell $(CXX) --version | head -n 1)
 
@@ -103,7 +110,6 @@ endif
 ifeq ($(BUILD_TYPE),cublas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CUBLAS=ON
-	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 endif
 ifeq ($(BUILD_TYPE),openblas)
 	EXTRA_LIBS=
@@ -120,19 +126,16 @@ ifeq ($(BUILD_TYPE),hipblas)
 	GPU_TARGETS ?= gfx900,gfx90a,gfx1030,gfx1031,gfx1100
 	AMDGPU_TARGETS ?= "$(GPU_TARGETS)"
 	CMAKE_ARGS+=-DGGML_HIPBLAS=ON -DAMDGPU_TARGETS="$(AMDGPU_TARGETS)" -DGPU_TARGETS="$(GPU_TARGETS)"
-	EXTRA_TARGETS+=ggml.dir/ggml-cuda.o
 	GGML_CUDA_OBJ_PATH=CMakeFiles/ggml-rocm.dir/ggml-cuda.cu.o
 endif
 ifeq ($(BUILD_TYPE),clblas)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CLBLAST=ON
-	EXTRA_TARGETS+=ggml.dir/ggml-opencl.o
 	CGO_TAGS=-tags cublas
 endif
 ifeq ($(BUILD_TYPE),metal)
 	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_METAL=ON
-	EXTRA_TARGETS+=ggml.dir/ggml-metal.o
 	CGO_TAGS=-tags metal
 endif
 
@@ -152,9 +155,10 @@ $(info I CXXFLAGS: $(CXXFLAGS))
 $(info I LDFLAGS:  $(LDFLAGS))
 $(info I BUILD_TYPE:  $(BUILD_TYPE))
 $(info I CMAKE_ARGS:  $(CMAKE_ARGS))
-$(info I EXTRA_TARGETS:  $(EXTRA_TARGETS))
 $(info I CC:       $(CCV))
 $(info I CXX:      $(CXXV))
+$(info I CP:       $(CP))
+$(info I CGO_TAGS:    $(CGO_TAGS))
 $(info )
 
 # Use this if you want to set the default behavior
@@ -169,40 +173,27 @@ build/chatglm.cpp: prepare
 # chatglm.dir
 chatglm.dir: build/chatglm.cpp
 	cd out && mkdir -p chatglm.dir && cd ../build && \
-	cp -rp CMakeFiles/chatglm.dir/chatglm.cpp.o ../out/chatglm.dir/chatglm.o
+	$(CP) CMakeFiles/chatglm.dir/chatglm.cpp.o ../out/chatglm.dir/chatglm.o
 
 # ggml.dir
 ggml.dir: build/chatglm.cpp
 	cd out && mkdir -p ggml.dir && cd ../build && \
-	cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml.c.o ../out/ggml.dir/ggml.o && \
-	cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-alloc.c.o ../out/ggml.dir/ggml-alloc.o
+	$(CP) third_party/ggml/src/CMakeFiles/ggml.dir/*.c.o ../out/ggml.dir/
 
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
 	cd out && mkdir -p sentencepiece.dir && cd ../build && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/sentencepiece_processor.cc.o ../out/sentencepiece.dir/sentencepiece_processor.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/error.cc.o ../out/sentencepiece.dir/error.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/model_factory.cc.o ../out/sentencepiece.dir/model_factory.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/model_interface.cc.o ../out/sentencepiece.dir/model_interface.o  && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/bpe_model.cc.o ../out/sentencepiece.dir/bpe_model.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/char_model.cc.o ../out/sentencepiece.dir/char_model.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/word_model.cc.o ../out/sentencepiece.dir/word_model.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/unigram_model.cc.o ../out/sentencepiece.dir/unigram_model.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/util.cc.o ../out/sentencepiece.dir/util.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/normalizer.cc.o ../out/sentencepiece.dir/normalizer.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/filesystem.cc.o ../out/sentencepiece.dir/filesystem.o && \
-	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/sentencepiece.pb.cc.o ../out/sentencepiece.dir/sentencepiece.pb.o && \
-  	cp -rf third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/sentencepiece_model.pb.cc.o ../out/sentencepiece.dir/sentencepiece_model.pb.o
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o ../out/sentencepiece.dir/
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir
 	cd out && mkdir -p protobuf-lite.dir && cd ../build && \
-	find third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite -name '*.cc.o' -exec cp {} ../out/protobuf-lite.dir/ \;
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite/*.cc.o ../out/protobuf-lite.dir/
 
 # absl.dir
 absl.dir: sentencepiece.dir
 	cd out && mkdir -p absl.dir && cd ../build && \
-	find third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/ -name '*.cc.o' -exec cp {} ../out/absl.dir/ \;
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o ../out/absl.dir/flag.o
 
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
@@ -212,24 +203,7 @@ binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir prot
 	-I./chatglm.cpp/third_party/sentencepiece/src \
 	binding.cpp -o binding.o -c $(LDFLAGS)
 
-# ggml-cuda
-ggml.dir/ggml-cuda.o: ggml.dir
-	cd build && cp -rf "$(GGML_CUDA_OBJ_PATH)" ../out/ggml.dir/ggml-cuda.o
-
-# ggml-opencl
-ggml.dir/ggml-opencl.o: ggml.dir
-	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-opencl.cpp.o ../out/ggml.dir/ggml-opencl.o
-
-# ggml-metal
-ggml.dir/ggml-metal.o: ggml.dir ggml.dir/ggml-backend.o
-	cd build && cp -rf bin/ggml-metal.metal ../ggml-metal.metal && \
-	cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-metal.m.o ../out/ggml.dir/ggml-metal.o
-
-# ggml-backend
-ggml.dir/ggml-backend.o:
-	cd build && cp -rf third_party/ggml/src/CMakeFiles/ggml.dir/ggml-backend.c.o ../out/ggml.dir/ggml-backend.o
-
-libbinding.a: prepare binding.o $(EXTRA_TARGETS)
+libbinding.a: prepare binding.o
 	ar src libbinding.a  \
 	out/chatglm.dir/chatglm.o \
 	out/ggml.dir/*.o out/sentencepiece.dir/*.o  \

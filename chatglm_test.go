@@ -15,7 +15,7 @@ var (
 func setup() {
 	testModelPath, exist := os.LookupEnv("TEST_MODEL")
 	if !exist {
-		testModelPath = "./chatglm3-ggml-q4_0.bin"
+		testModelPath = "chatglm3-ggml-q4_0.bin"
 	}
 
 	var err error
@@ -153,7 +153,9 @@ func TestCodeInterpreter(t *testing.T) {
 	if err != nil {
 		assert.Fail(t, "call code interpreter failed.")
 	}
-	messages = append(messages, NewAssistantMsg(ret, modelType))
+	msg := NewAssistantMsg(ret, modelType)
+	msg.ToolCalls = append(msg.ToolCalls, &ToolCallMessage{Type: TypeCode, Code: &CodeMessage{Input: "```python\ndef is_prime(n):\n    \"\"\"Check if a number is prime.\"\"\"\n    if n <= 1:\n        return False\n    if n <= 3:\n        return True\n    if n % 2 == 0 or n % 3 == 0:\n        return False\n    i = 5\n    while i * i <= n:\n        if n % i == 0 or n % (i + 2) == 0:\n            return False\n        i += 6\n    return True\n\n# Get all prime numbers up to 100\nprimes_upto_100 = [i for i in range(2, 101) if is_prime(i)]\nprimes_upto_100\n```"}})
+	messages = append(messages, msg)
 	assert.Contains(t, ret, "好的，我会为您列出100以内的所有质数。\n\n质数是指只能被1和它本身整除的大于1的整数。例如，2、3、5、7等都是质数。\n\n让我们开始吧！")
 	messages = append(messages, NewObservationMsg("[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]"))
 

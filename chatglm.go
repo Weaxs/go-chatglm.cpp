@@ -4,7 +4,7 @@ package chatglm
 // #cgo CXXFLAGS: -I${SRCDIR}/chatglm.cpp
 // #cgo CXXFLAGS: -I${SRCDIR}/chatglm.cpp/third_party/ggml/include/ggml -I${SRCDIR}/chatglm.cpp/third_party/ggml/src
 // #cgo CXXFLAGS: -I${SRCDIR}/chatglm.cpp/third_party/sentencepiece/src
-// #cgo LDFLAGS: -L${SRCDIR}/ -lbinding -lm -lstdc++
+// #cgo LDFLAGS: -L${SRCDIR}/ -lbinding -lm -v
 // #cgo darwin LDFLAGS: -framework Accelerate
 // #include "binding.h"
 // #include <stdlib.h>

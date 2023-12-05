@@ -43,8 +43,8 @@ ifeq ($(UNAME_S),Darwin)
 	ifneq ($(UNAME_P),arm)
 		SYSCTL_M := $(shell sysctl -n hw.optional.arm64 2>/dev/null)
 		ifeq ($(SYSCTL_M),1)
-			# UNAME_P := arm
-			# UNAME_M := arm64
+			UNAME_P := arm
+			UNAME_M := arm64
 			warn := $(warning Your arch is announced as x86_64, but it seems to actually be ARM64. Not fixing that can lead to bad performance. For more info see: https://github.com/ggerganov/whisper.cpp/issues/66\#issuecomment-1282546789)
 		endif
 	endif
@@ -56,30 +56,25 @@ endif
 
 BUILD_TYPE?=
 # keep standard at C17 and C++17
-CFLAGS   = -I. -O3 -DNDEBUG -std=c17 -fPIC -pthread
 CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC -pthread
-LDFLAGS  =
-CMAKE_ARGS = -DCMAKE_C_COMPILER=$(shell which gcc) -DCMAKE_CXX_COMPILER=$(shell which g++)
+CMAKE_ARGS = -DCMAKE_C_COMPILER=$(shell which cc) -DCMAKE_CXX_COMPILER=$(shell which c++)
 
 # warnings
-CFLAGS   += -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -Wno-unused-function
-CXXFLAGS += -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function
+CXXFLAGS += -g -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -pedantic-errors
 
 # GPGPU specific
 GGML_CUDA_OBJ_PATH=third_party/ggml/src/CMakeFiles/ggml.dir/ggml-cuda.cu.o
 
 
 # Architecture specific
-# TODO: probably these flags need to be tweaked on some architectures
-#       feel free to update the Makefile for your architecture and send a pull request or issue
+# feel free to update the Makefile for your architecture and send a pull request or issue
 ifeq ($(UNAME_M),$(filter $(UNAME_M),x86_64 i686))
 	# Use all CPU extensions that are available:
-	CFLAGS += -march=native -mtune=native
+	CXXFLAGS += -march=native -mtune=native
 endif
 ifneq ($(filter ppc64%,$(UNAME_M)),)
 	POWER9_M := $(shell grep "POWER9" /proc/cpuinfo)
 	ifneq (,$(findstring POWER9,$(POWER9_M)))
-		CFLAGS += -mcpu=power9
 		CXXFLAGS += -mcpu=power9
 	endif
 	# Require c++23's std::byteswap for big-endian support.
@@ -88,55 +83,46 @@ ifneq ($(filter ppc64%,$(UNAME_M)),)
 	endif
 endif
 ifdef CHATGLM_GPROF
-	CFLAGS   += -pg
 	CXXFLAGS += -pg
 endif
 ifneq ($(filter aarch64%,$(UNAME_M)),)
-	CFLAGS += -mcpu=native
 	CXXFLAGS += -mcpu=native
 endif
 ifneq ($(filter armv6%,$(UNAME_M)),)
 	# Raspberry Pi 1, 2, 3
-	CFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access
+	CXXFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access
 endif
 ifneq ($(filter armv7%,$(UNAME_M)),)
 	# Raspberry Pi 4
-	CFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access -funsafe-math-optimizations
+	CXXFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access -funsafe-math-optimizations
 endif
 ifneq ($(filter armv8%,$(UNAME_M)),)
 	# Raspberry Pi 4
-	CFLAGS += -mfp16-format=ieee -mno-unaligned-access
+	CXXFLAGS += -mfp16-format=ieee -mno-unaligned-access
 endif
 
-# Build Acceleration
 ifeq ($(BUILD_TYPE),cublas)
-	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CUBLAS=ON
 endif
 ifeq ($(BUILD_TYPE),openblas)
-	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_OPENBLAS=ON
-	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
-    LDFLAGS += -lopenblas
+	CXXFLAGS  += -I/usr/local/include/openblas -lopenblas
     CGO_TAGS=-tags openblas
 endif
 ifeq ($(BUILD_TYPE),hipblas)
 	ROCM_HOME ?= "/opt/rocm"
 	CXX="$(ROCM_HOME)"/llvm/bin/clang++
 	CC="$(ROCM_HOME)"/llvm/bin/clang
-	EXTRA_LIBS=
 	GPU_TARGETS ?= gfx900,gfx90a,gfx1030,gfx1031,gfx1100
 	AMDGPU_TARGETS ?= "$(GPU_TARGETS)"
 	CMAKE_ARGS+=-DGGML_HIPBLAS=ON -DAMDGPU_TARGETS="$(AMDGPU_TARGETS)" -DGPU_TARGETS="$(GPU_TARGETS)"
 	GGML_CUDA_OBJ_PATH=CMakeFiles/ggml-rocm.dir/ggml-cuda.cu.o
 endif
 ifeq ($(BUILD_TYPE),clblas)
-	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_CLBLAST=ON
 	CGO_TAGS=-tags cublas
 endif
 ifeq ($(BUILD_TYPE),metal)
-	EXTRA_LIBS=
 	CMAKE_ARGS+=-DGGML_METAL=ON
 	CGO_TAGS=-tags metal
 	EXTRA_TARGETS+=ggml-metal
@@ -153,9 +139,7 @@ $(info I chatglm.cpp build info: )
 $(info I UNAME_S:  $(UNAME_S))
 $(info I UNAME_P:  $(UNAME_P))
 $(info I UNAME_M:  $(UNAME_M))
-$(info I CFLAGS:   $(CFLAGS))
 $(info I CXXFLAGS: $(CXXFLAGS))
-$(info I LDFLAGS:  $(LDFLAGS))
 $(info I BUILD_TYPE:  $(BUILD_TYPE))
 $(info I CMAKE_ARGS:  $(CMAKE_ARGS))
 $(info I EXTRA_TARGETS:  $(EXTRA_TARGETS))
@@ -182,7 +166,7 @@ chatglm.dir: build/chatglm.cpp
 # ggml.dir
 ggml.dir: build/chatglm.cpp
 	cd out && mkdir -p ggml.dir && cd ..$(DELIMITER)build && \
-	$(CP) third_party$(DELIMITER)ggml$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)ggml.dir$(DELIMITER)*.c.o ..$(DELIMITER)out$(DELIMITER)ggml.dir$(DELIMITER)
+	$(CP) third_party$(DELIMITER)ggml$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)ggml.dir$(DELIMITER)*.o ..$(DELIMITER)out$(DELIMITER)ggml.dir$(DELIMITER)
 
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
@@ -202,7 +186,7 @@ absl.dir: sentencepiece.dir
 
 # ggml-metal
 ggml-metal: ggml.dir
-	cd build && $(CP) bin$(DELIMITER)ggml-metal.metal ..$(DELIMITER)
+	cd build && $(CP) bin/ggml-metal.metal ../
 
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
@@ -210,7 +194,7 @@ binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir prot
 	-I.$(DELIMITER)chatglm.cpp  \
 	-I.$(DELIMITER)chatglm.cpp$(DELIMITER)third_party$(DELIMITER)ggml$(DELIMITER)include$(DELIMITER)ggml \
 	-I.$(DELIMITER)chatglm.cpp$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src \
-	binding.cpp -o binding.o -c $(LDFLAGS)
+	binding.cpp -MD -MT binding.o -MF binding.d -o binding.o -c
 
 libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	ar src libbinding.a  \
@@ -221,6 +205,7 @@ libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 
 clean:
 	rm -rf *.o
+	rm -rf *.d
 	rm -rf *.a
 	rm -rf out
 	rm -rf build
@@ -236,4 +221,5 @@ windows/ggllm-test-model.bin:
 	powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin' -OutFile 'ggllm-test-model.bin'"
 
 test: $(DOWNLOAD_TARGETS) libbinding.a
-	TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} -timeout 1800s .
+	TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} -timeout 1800s -o $PWD/go-chatglm.cpp.test -c -cover \
+ 	$PWD/go-chatglm.cpp.test

@@ -21,17 +21,7 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <fcntl.h>
-#include <io.h>
 #include <windows.h>
-#endif
-
-#ifdef GGML_CUBLAS
-#include <ggml-cuda.h>
-#endif
-
-#ifdef GGML_METAL
-#include <ggml-metal.h>
 #endif
 
 #if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__)) || defined (_WIN32)
@@ -225,12 +215,14 @@ void* create_function(const char* name, const char *arguments) {
 
 
 void* create_code(const char* input) {
-    return  new chatglm::CodeMessage(input);;
+    return  new chatglm::CodeMessage(input);
 }
 
 char* get_model_type(void* pipe_pr) {
     chatglm::Pipeline* pipe_p = (chatglm::Pipeline*) pipe_pr;
-    return strdup(to_string(pipe_p->model->config.model_type).data());
+    chatglm::ModelLoader loader(pipe_p->mapped_file->data, pipe_p->mapped_file->size);
+    loader.read_string(4);
+    return strdup(chatglm::to_string((chatglm::ModelType)loader.read_basic<int>()).data());
 }
 
 // copy from chatglm::TextStreamer

@@ -160,29 +160,29 @@ build/chatglm.cpp: prepare
 
 # chatglm.dir
 chatglm.dir: build/chatglm.cpp
-	cd out && mkdir -p chatglm.dir && cd ..$(DELIMITER)build && \
-	$(CP) CMakeFiles$(DELIMITER)chatglm.dir$(DELIMITER)chatglm.cpp.o ..$(DELIMITER)out$(DELIMITER)chatglm.dir$(DELIMITER)
+	cd out && mkdir -p chatglm.dir && cd ../build
+	$(CP) CMakeFiles/chatglm.dir/chatglm.cpp.o ../out/chatglm.dir/
 
 # ggml.dir
 ggml.dir: build/chatglm.cpp
-	cd out && mkdir -p ggml.dir && cd ..$(DELIMITER)build && \
-	$(CP) third_party$(DELIMITER)ggml$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)ggml.dir$(DELIMITER)*.o ..$(DELIMITER)out$(DELIMITER)ggml.dir$(DELIMITER)
+	cd out && mkdir -p ggml.dir && cd ../build
+	$(CP) third_party/ggml/src/CMakeFiles/ggml.dir/*.o ../out/ggml.dir/
 
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
-	cd out && mkdir -p sentencepiece.dir && cd ..$(DELIMITER)build && \
-	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)*.cc.o ..$(DELIMITER)out$(DELIMITER)sentencepiece.dir$(DELIMITER) && \
-	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)builtin_pb$(DELIMITER)*.cc.o ..$(DELIMITER)out$(DELIMITER)sentencepiece.dir$(DELIMITER)
+	cd out && mkdir -p sentencepiece.dir && cd ../build
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o ../out/sentencepiece.dir/
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/*.cc.o ../out/sentencepiece.dir/
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir
-	cd out && mkdir -p protobuf-lite.dir && cd ..$(DELIMITER)build && \
-	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)__$(DELIMITER)third_party$(DELIMITER)protobuf-lite$(DELIMITER)*.cc.o ..$(DELIMITER)out$(DELIMITER)protobuf-lite.dir$(DELIMITER)
+	cd out && mkdir -p protobuf-lite.dir && cd ../build
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite/*.cc.o ../out/protobuf-lite.dir/
 
 # absl.dir
 absl.dir: sentencepiece.dir
-	cd out && mkdir -p absl.dir && cd ..$(DELIMITER)build && \
-	$(CP) third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)__$(DELIMITER)third_party$(DELIMITER)absl$(DELIMITER)flags$(DELIMITER)flag.cc.o ..$(DELIMITER)out$(DELIMITER)absl.dir$(DELIMITER)
+	cd out && mkdir -p absl.dircd ../build
+	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o ../out/absl.dir/
 
 # ggml-metal
 ggml-metal: ggml.dir
@@ -191,16 +191,16 @@ ggml-metal: ggml.dir
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
 	$(CXX) $(CXXFLAGS) \
-	-I.$(DELIMITER)chatglm.cpp  \
-	-I.$(DELIMITER)chatglm.cpp$(DELIMITER)third_party$(DELIMITER)ggml$(DELIMITER)include$(DELIMITER)ggml \
-	-I.$(DELIMITER)chatglm.cpp$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src \
+	-I./chatglm.cpp  \
+	-I./chatglm.cpp/third_party/ggml/include/ggml \
+	-I./chatglm.cpp/third_party/sentencepiece/src \
 	binding.cpp -MD -MT binding.o -MF binding.d -o binding.o -c
 
 libbinding.a: prepare binding.o $(EXTRA_TARGETS)
 	ar src libbinding.a  \
-	out$(DELIMITER)chatglm.dir$(DELIMITER)*.o \
-	out$(DELIMITER)ggml.dir$(DELIMITER)*.o out$(DELIMITER)sentencepiece.dir$(DELIMITER)*.o  \
-	out$(DELIMITER)protobuf-lite.dir$(DELIMITER)*.o out$(DELIMITER)absl.dir$(DELIMITER)*.o \
+	out/chatglm.dir/*.o \
+	out/ggml.dir/*.o out/sentencepiece.dir/*.o  \
+	out/protobuf-lite.dir/*.o out/absl.dir/*.o \
 	binding.o
 
 clean:
@@ -221,5 +221,5 @@ windows/ggllm-test-model.bin:
 	powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin' -OutFile 'ggllm-test-model.bin'"
 
 test: $(DOWNLOAD_TARGETS) libbinding.a
-	TEST_MODEL=ggllm-test-model.bin go test ${CGO_TAGS} -timeout 1800s -o $PWD/go-chatglm.cpp.test -c -cover
-	$PWD/go-chatglm.cpp.test
+	go test ${CGO_TAGS} -timeout 1800s -o $PWD/go-chatglm.cpp.test -c -cover
+	TEST_MODEL=ggllm-test-model.bin $PWD/go-chatglm.cpp.test

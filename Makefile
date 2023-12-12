@@ -186,7 +186,7 @@ absl.dir: sentencepiece.dir
 
 # ggml-metal
 ggml-metal: ggml.dir
-	cd build && $(CP) bin/ggml-metal.metal ../
+	$(CP) build/bin/ggml-metal.metal .
 
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
@@ -221,5 +221,5 @@ windows/ggllm-test-model.bin:
 	powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Xorbits/chatglm3-6B-GGML/resolve/main/chatglm3-ggml-q4_0.bin' -OutFile 'ggllm-test-model.bin'"
 
 test: $(DOWNLOAD_TARGETS) libbinding.a
-	go test ${CGO_TAGS} -timeout 1800s -o $PWD/go-chatglm.cpp.test -c -cover
-	TEST_MODEL=ggllm-test-model.bin $PWD/go-chatglm.cpp.test
+	go test ${CGO_TAGS} -timeout 1800s -o go-chatglm.cpp.test -c -cover
+	TEST_MODEL=ggllm-test-model.bin go-chatglm.cpp.test

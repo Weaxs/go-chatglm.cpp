@@ -160,29 +160,29 @@ build/chatglm.cpp: prepare
 
 # chatglm.dir
 chatglm.dir: build/chatglm.cpp
-	cd out && mkdir -p chatglm.dir && cd ../build
-	$(CP) CMakeFiles/chatglm.dir/chatglm.cpp.o ../out/chatglm.dir/
+	cd out && mkdir -p chatglm.dir
+	$(CP) build/CMakeFiles/chatglm.dir/chatglm.cpp.o out/chatglm.dir/
 
 # ggml.dir
 ggml.dir: build/chatglm.cpp
-	cd out && mkdir -p ggml.dir && cd ../build
-	$(CP) third_party/ggml/src/CMakeFiles/ggml.dir/*.o ../out/ggml.dir/
+	cd out && mkdir -p ggml.dir
+	$(CP) build/third_party/ggml/src/CMakeFiles/ggml.dir/*.o out/ggml.dir/
 
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
-	cd out && mkdir -p sentencepiece.dir && cd ../build
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o ../out/sentencepiece.dir/
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/*.cc.o ../out/sentencepiece.dir/
+	cd out && mkdir -p sentencepiece.dir
+	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o out/sentencepiece.dir/
+	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/*.cc.o out/sentencepiece.dir/
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir
-	cd out && mkdir -p protobuf-lite.dir && cd ../build
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite/*.cc.o ../out/protobuf-lite.dir/
+	cd out && mkdir -p protobuf-lite.dir
+	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite/*.cc.o out/protobuf-lite.dir/
 
 # absl.dir
 absl.dir: sentencepiece.dir
-	cd out && mkdir -p absl.dircd ../build
-	$(CP) third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o ../out/absl.dir/
+	cd out && mkdir -p absl.dir
+	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o out/absl.dir/
 
 # ggml-metal
 ggml-metal: ggml.dir

@@ -222,4 +222,4 @@ windows/ggllm-test-model.bin:
 
 test: $(DOWNLOAD_TARGETS) libbinding.a
 	go test ${CGO_TAGS} -timeout 1800s -o go-chatglm.cpp.test -c -cover
-	TEST_MODEL=ggllm-test-model.bin go-chatglm.cpp.test
+	TEST_MODEL=ggllm-test-model.bin ./go-chatglm.cpp.test

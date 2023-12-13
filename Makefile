@@ -21,7 +21,7 @@ ifndef UNAME_M
 	ifeq ($(OS),Windows_NT)
 		UNAME_M := $(PROCESSOR_ARCHITECTURE)
 	else
-		UNAME_M := $(shell uname -s)
+		UNAME_M := $(shell uname -m)
 	endif
 endif
 
@@ -57,10 +57,12 @@ endif
 BUILD_TYPE?=
 # keep standard at C17 and C++17
 CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC -pthread
-CMAKE_ARGS = -DCMAKE_C_COMPILER=$(shell which cc) -DCMAKE_CXX_COMPILER=$(shell which c++)
+CMAKE_ARGS=
 
 # warnings
-CXXFLAGS += -g -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -pedantic-errors
+ifneq ($(OS),Windows_NT)
+	CXXFLAGS += -g -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -pedantic-errors
+endif
 
 # GPGPU specific
 GGML_CUDA_OBJ_PATH=third_party/ggml/src/CMakeFiles/ggml.dir/ggml-cuda.cu.o
@@ -161,28 +163,28 @@ build/chatglm.cpp: prepare
 # chatglm.dir
 chatglm.dir: build/chatglm.cpp
 	cd out && mkdir -p chatglm.dir
-	$(CP) build/CMakeFiles/chatglm.dir/chatglm.cpp.o out/chatglm.dir/
+	$(CP) build$(DELIMITER)CMakeFiles$(DELIMITER)chatglm.dir$(DELIMITER)chatglm.cpp.o out$(DELIMITER)chatglm.dir$(DELIMITER)
 
 # ggml.dir
 ggml.dir: build/chatglm.cpp
 	cd out && mkdir -p ggml.dir
-	$(CP) build/third_party/ggml/src/CMakeFiles/ggml.dir/*.o out/ggml.dir/
+	$(CP) build$(DELIMITER)third_party$(DELIMITER)ggml$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)ggml.dir$(DELIMITER)*.o out$(DELIMITER)ggml.dir$(DELIMITER)
 
 # sentencepiece.dir
 sentencepiece.dir: build/chatglm.cpp
 	cd out && mkdir -p sentencepiece.dir
-	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/*.cc.o out/sentencepiece.dir/
-	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/builtin_pb/*.cc.o out/sentencepiece.dir/
+	$(CP) build$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)*.cc.o out$(DELIMITER)sentencepiece.dir$(DELIMITER)
+	$(CP) build$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)builtin_pb$(DELIMITER)*.cc.o out$(DELIMITER)sentencepiece.dir$(DELIMITER)
 
 # protobuf-lite.dir
 protobuf-lite.dir: sentencepiece.dir
 	cd out && mkdir -p protobuf-lite.dir
-	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/protobuf-lite/*.cc.o out/protobuf-lite.dir/
+	$(CP) build$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)__$(DELIMITER)third_party$(DELIMITER)protobuf-lite$(DELIMITER)*.cc.o out$(DELIMITER)protobuf-lite.dir$(DELIMITER)
 
 # absl.dir
 absl.dir: sentencepiece.dir
 	cd out && mkdir -p absl.dir
-	$(CP) build/third_party/sentencepiece/src/CMakeFiles/sentencepiece-static.dir/__/third_party/absl/flags/flag.cc.o out/absl.dir/
+	$(CP) build$(DELIMITER)third_party$(DELIMITER)sentencepiece$(DELIMITER)src$(DELIMITER)CMakeFiles$(DELIMITER)sentencepiece-static.dir$(DELIMITER)__$(DELIMITER)third_party$(DELIMITER)absl$(DELIMITER)flags$(DELIMITER)flag.cc.o out$(DELIMITER)absl.dir$(DELIMITER)
 
 # ggml-metal
 ggml-metal: ggml.dir

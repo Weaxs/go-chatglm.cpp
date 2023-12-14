@@ -56,13 +56,12 @@ endif
 
 BUILD_TYPE?=
 # keep standard at C17 and C++17
-CFLAGS = -I. -O3 -DNDEBUG -std=c17 -fPIC -pthread
 CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC -pthread
+CMAKE_ARGS=
 
 # warnings
 ifneq ($(OS),Windows_NT)
-	CFLAGS += -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -pedantic-errors
-	CXXFLAGS += -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function
+	CXXFLAGS += -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -pedantic-errors
 endif
 
 # GPGPU specific
@@ -73,12 +72,11 @@ GGML_CUDA_OBJ_PATH=third_party/ggml/src/CMakeFiles/ggml.dir/ggml-cuda.cu.o
 # feel free to update the Makefile for your architecture and send a pull request or issue
 ifeq ($(UNAME_M),$(filter $(UNAME_M),x86_64 i686))
 	# Use all CPU extensions that are available:
-	CFLAGS += -march=native -mtune=native
+	CXXFLAGS += -march=native -mtune=native
 endif
 ifneq ($(filter ppc64%,$(UNAME_M)),)
 	POWER9_M := $(shell grep "POWER9" /proc/cpuinfo)
 	ifneq (,$(findstring POWER9,$(POWER9_M)))
-		CFLAGS += -mcpu=power9
 		CXXFLAGS += -mcpu=power9
 	endif
 	# Require c++23's std::byteswap for big-endian support.
@@ -87,24 +85,22 @@ ifneq ($(filter ppc64%,$(UNAME_M)),)
 	endif
 endif
 ifdef CHATGLM_GPROF
-	CFLAGS += -pg
 	CXXFLAGS += -pg
 endif
 ifneq ($(filter aarch64%,$(UNAME_M)),)
-	CFLAGS += -mcpu=native
 	CXXFLAGS += -mcpu=native
 endif
 ifneq ($(filter armv6%,$(UNAME_M)),)
 	# Raspberry Pi 1, 2, 3
-	CFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access
+	CXXFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access
 endif
 ifneq ($(filter armv7%,$(UNAME_M)),)
 	# Raspberry Pi 4
-	CFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access -funsafe-math-optimizations
+	CXXFLAGS += -mfpu=neon-fp-armv8 -mfp16-format=ieee -mno-unaligned-access -funsafe-math-optimizations
 endif
 ifneq ($(filter armv8%,$(UNAME_M)),)
 	# Raspberry Pi 4
-	CFLAGS += -mfp16-format=ieee -mno-unaligned-access
+	CXXFLAGS += -mfp16-format=ieee -mno-unaligned-access
 endif
 
 ifeq ($(BUILD_TYPE),cublas)
@@ -145,7 +141,6 @@ $(info I chatglm.cpp build info: )
 $(info I UNAME_S:  $(UNAME_S))
 $(info I UNAME_P:  $(UNAME_P))
 $(info I UNAME_M:  $(UNAME_M))
-$(info I CFLAGS:   $(CFLAGS))
 $(info I CXXFLAGS: $(CXXFLAGS))
 $(info I BUILD_TYPE:  $(BUILD_TYPE))
 $(info I CMAKE_ARGS:  $(CMAKE_ARGS))

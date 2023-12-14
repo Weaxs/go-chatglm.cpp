@@ -60,7 +60,7 @@ jobs:
         run: go mod tidy
       - name: Test
         run: |
-          CC=gcc CXX=g++ make test -f Makefile.win
+          CC="gcc" CXX="g++" make test -f Makefile.win
 
   macOS-latest:
     runs-on: macOS-latest
@@ -113,4 +113,4 @@ jobs:
         run: go mod tidy
       - name: Test
         run: |
-          arch -arm64 make BUILD_TYPE=metal test
+          make BUILD_TYPE=metal test

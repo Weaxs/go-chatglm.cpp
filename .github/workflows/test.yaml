@@ -60,7 +60,7 @@ jobs:
         run: go mod tidy
       - name: Test
         run: |
-          CC="gcc" CXX="g++" make test -f Makefile.win
+          make test -f Makefile.win
 
   macOS-latest:
     runs-on: macOS-latest

@@ -57,7 +57,6 @@ endif
 BUILD_TYPE?=
 # keep standard at C17 and C++17
 CXXFLAGS = -I. -O3 -DNDEBUG -std=c++17 -fPIC -pthread
-CMAKE_ARGS=
 
 # warnings
 ifneq ($(OS),Windows_NT)

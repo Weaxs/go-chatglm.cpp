@@ -114,7 +114,7 @@ build/chatglm.cpp: prepare
 	cd build && CC="$(CC)" CXX="$(CXX)" cmake $(CMAKE_ARGS) ../chatglm.cpp && VERBOSE=1 cmake --build . -j --config Release
 
 chatglm.dir: build/chatglm.cpp
-	xcopy build\\bin\\Release\\*.lib out\\
+	xcopy build\\lib\\Release\\*.lib out\\
 
 # binding
 binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir protobuf-lite.dir absl.dir
@@ -122,10 +122,10 @@ binding.o: prepare build/chatglm.cpp chatglm.dir ggml.dir sentencepiece.dir prot
 	-I./chatglm.cpp  \
 	-I./chatglm.cpp/third_party/ggml/include/ggml \
 	-I./chatglm.cpp/third_party/sentencepiece/src \
-	binding.cpp -MD -MT binding.o -MF binding.d -o binding.lib -c
+	binding.cpp -MD -MT binding.lib -MF binding.d -o binding.lib -c
 
 libbinding.a: prepare binding.o $(EXTRA_TARGETS)
-	ar src libbinding.a out/*.lib binding.lib
+	lib.exe /OUT:libbinding.lib out/*.lib binding.lib
 
 clean:
 	rm -rf *.o

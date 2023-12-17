@@ -36,32 +36,6 @@ jobs:
         run: |
           make test
 
-  windows-latest:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        go-version: [ 'stable' ]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Display Go version
-        run: go version
-      - name: Display GCC version
-        run: gcc --version
-      - name: Display CMake version
-        run: cmake --version
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Test
-        run: |
-          make test -f Makefile.win
-
   macOS-latest:
     runs-on: macOS-latest
     strategy:

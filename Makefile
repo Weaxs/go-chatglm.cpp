@@ -47,6 +47,7 @@ GGML_CUDA_OBJ_PATH=third_party/ggml/src/CMakeFiles/ggml.dir/ggml-cuda.cu.o
 # feel free to update the Makefile for your architecture and send a pull request or issue
 ifeq ($(UNAME_M),$(filter $(UNAME_M),x86_64 i686))
 	# Use all CPU extensions that are available:
+	export GGML_F16C=OFF GGML_AVX2=OFF GGML_FMA=OFF
 	CMAKE_ARGS += -DCMAKE_C_FLAGS=-march=native -DGGML_F16C=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF
 	CXXFLAGS += -march=native -mtune=native
 endif

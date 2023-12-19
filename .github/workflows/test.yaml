@@ -62,8 +62,8 @@ jobs:
         run: |
           make test
 
-  macOS-metal-latest:
-    runs-on: macOS-latest
+  macOS-arm64-metal-latest:
+    runs-on: macos-13-arm64
     strategy:
       matrix:
         go-version: ['stable']

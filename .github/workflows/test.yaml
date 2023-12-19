@@ -62,29 +62,31 @@ jobs:
         run: |
           make test
 
-  macOS-arm64-metal-latest:
-    runs-on: macos-13-arm64
-    strategy:
-      matrix:
-        go-version: ['stable']
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ matrix.go-version }}
-      # You can test your matrix by printing the current Go version
-      - name: Display Go version
-        run: go version
-      - name: Display GCC version
-        run: gcc --version
-      - name: Display CMake version
-        run: cmake --version
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Test
-        run: |
-          make BUILD_TYPE=metal test
+# arm not support https://github.com/actions/runner-images/issues/8610
+# Apple Silicon powered macOS runners are now available in public beta!  https://github.com/actions/runner-images/issues/8439
+#  macOS-arm64-metal-latest:
+#    runs-on: macos-13-arm64
+#    strategy:
+#      matrix:
+#        go-version: ['stable']
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v3
+#        with:
+#          submodules: recursive
+#      - name: Setup Go ${{ matrix.go-version }}
+#        uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ matrix.go-version }}
+#      # You can test your matrix by printing the current Go version
+#      - name: Display Go version
+#        run: go version
+#      - name: Display GCC version
+#        run: gcc --version
+#      - name: Display CMake version
+#        run: cmake --version
+#      - name: Install dependencies
+#        run: go mod tidy
+#      - name: Test
+#        run: |
+#          make BUILD_TYPE=metal test

@@ -1,5 +1,17 @@
 package chatglm
 
+const (
+	RoleUser        = "user"
+	RoleAssistant   = "assistant"
+	RoleSystem      = "system"
+	RoleObservation = "observation"
+
+	TypeFunction = "function"
+	TypeCode     = "code"
+
+	DELIMITER = "<|delimiter|>"
+)
+
 type GenerationOptions struct {
 	MaxLength         int
 	MaxContextLength  int
@@ -10,6 +22,24 @@ type GenerationOptions struct {
 	RepetitionPenalty float32
 	NumThreads        int
 	StreamCallback    func(string) bool
+}
+
+type ChatMessage struct {
+	Role      string
+	Content   string
+	ToolCalls []*ToolCallMessage
+}
+type ToolCallMessage struct {
+	Type     string
+	Function *FunctionMessage
+	Code     *CodeMessage
+}
+type FunctionMessage struct {
+	Name      string
+	Arguments string
+}
+type CodeMessage struct {
+	Input string
 }
 
 type GenerationOption func(g *GenerationOptions)

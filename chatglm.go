@@ -4,7 +4,7 @@ package chatglm
 // #cgo CXXFLAGS: -I${SRCDIR}/chatglm.cpp
 // #cgo CXXFLAGS: -I${SRCDIR}/chatglm.cpp/third_party/ggml/include/ggml -I${SRCDIR}/chatglm.cpp/third_party/ggml/src
 // #cgo CXXFLAGS: -I${SRCDIR}/chatglm.cpp/third_party/sentencepiece/src
-// #cgo LDFLAGS: -L${SRCDIR}/ -lbinding -lm -lstdc++
+// #cgo LDFLAGS: -L${SRCDIR}/ -lbinding -lm -v
 // #cgo darwin LDFLAGS: -framework Accelerate
 // #include "binding.h"
 // #include <stdlib.h>
@@ -36,20 +36,55 @@ func New(model string) (*Chatglm, error) {
 	return llm, nil
 }
 
-// Chat sync chat
-func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, error) {
+func NewAssistantMsg(input string, modelType string) *ChatMessage {
+	result := &ChatMessage{Role: RoleAssistant, Content: input}
+	if modelType != "ChatGLM3" {
+		return result
+	}
+
+	if !strings.Contains(input, DELIMITER) {
+		return result
+	}
+
+	ciPos := strings.Index(input, DELIMITER)
+	if ciPos != 0 {
+		content := input[:ciPos]
+		code := input[ciPos+len(DELIMITER):]
+		toolCalls := []*ToolCallMessage{{Type: TypeCode, Code: &CodeMessage{code}}}
+		result.Content = content
+		result.ToolCalls = toolCalls
+	}
+	return result
+}
+
+func NewUserMsg(content string) *ChatMessage {
+	return &ChatMessage{Role: RoleUser, Content: content}
+}
+
+func NewSystemMsg(content string) *ChatMessage {
+	return &ChatMessage{Role: RoleSystem, Content: content}
+}
+
+func NewObservationMsg(content string) *ChatMessage {
+	return &ChatMessage{Role: RoleObservation, Content: content}
+}
+
+// Chat by history [synchronous]
+func (llm *Chatglm) Chat(messages []*ChatMessage, opts ...GenerationOption) (string, error) {
+	err := checkChatMessages(messages)
+	if err != nil {
+		return "", err
+	}
+	reverseMsgs, err := allocateChatMessages(messages)
+	if err != nil {
+		return "", err
+	}
+	reverseCount := len(reverseMsgs)
+	pass := &reverseMsgs[0]
+
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
 	defer freeParams(params)
-
-	reverseCount := len(history)
-	reversePrompt := make([]*C.char, reverseCount)
-	var pass **C.char
-	for i, s := range history {
-		cs := C.CString(s)
-		reversePrompt[i] = cs
-		pass = &reversePrompt[0]
-	}
 
 	if opt.MaxContextLength == 0 {
 		opt.MaxContextLength = 99999999
@@ -61,24 +96,26 @@ func (llm *Chatglm) Chat(history []string, opts ...GenerationOption) (string, er
 		return "", fmt.Errorf("model chat failed")
 	}
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
-	res = strings.TrimPrefix(res, " ")
-	res = strings.TrimPrefix(res, "\n")
+	res = removeSpecialTokens(res)
 	return res, nil
 }
 
-func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) (string, error) {
+// StreamChat chat with stream output by StreamCallback
+func (llm *Chatglm) StreamChat(messages []*ChatMessage, opts ...GenerationOption) (string, error) {
+	err := checkChatMessages(messages)
+	if err != nil {
+		return "", err
+	}
+	reverseMsgs, err := allocateChatMessages(messages)
+	if err != nil {
+		return "", err
+	}
+	reverseCount := len(reverseMsgs)
+	pass := &reverseMsgs[0]
+
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
 	defer freeParams(params)
-
-	reverseCount := len(history)
-	reversePrompt := make([]*C.char, reverseCount)
-	var pass **C.char
-	for i, s := range history {
-		cs := C.CString(s)
-		reversePrompt[i] = cs
-		pass = &reversePrompt[0]
-	}
 
 	if opt.StreamCallback != nil {
 		setStreamCallback(llm.pipeline, opt.StreamCallback)
@@ -96,11 +133,11 @@ func (llm *Chatglm) StreamChat(history []string, opts ...GenerationOption) (stri
 		return "", fmt.Errorf("model chat failed")
 	}
 	res := C.GoString((*C.char)(unsafe.Pointer(&out[0])))
-	res = strings.TrimPrefix(res, " ")
-	res = strings.TrimPrefix(res, "\n")
+	res = removeSpecialTokens(res)
 	return res, nil
 }
 
+// Generate by prompt [synchronous]
 func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
@@ -121,6 +158,7 @@ func (llm *Chatglm) Generate(prompt string, opts ...GenerationOption) (string, e
 	return res, nil
 }
 
+// StreamGenerate with stream output by StreamCallback
 func (llm *Chatglm) StreamGenerate(prompt string, opts ...GenerationOption) (string, error) {
 	opt := NewGenerationOptions(opts...)
 	params := allocateParams(opt)
@@ -148,6 +186,7 @@ func (llm *Chatglm) StreamGenerate(prompt string, opts ...GenerationOption) (str
 	return res, nil
 }
 
+// Embeddings get text input_ids,
 func (llm *Chatglm) Embeddings(text string, opts ...GenerationOption) ([]int, error) {
 	opt := NewGenerationOptions(opts...)
 	input := C.CString(text)
@@ -156,8 +195,7 @@ func (llm *Chatglm) Embeddings(text string, opts ...GenerationOption) ([]int, er
 	}
 	ints := make([]int, opt.MaxLength)
 
-	params := allocateParams(opt)
-	ret := C.get_embedding(llm.pipeline, params, input, (*C.int)(unsafe.Pointer(&ints[0])))
+	ret := C.get_embedding(llm.pipeline, input, C.int(opt.MaxLength), (*C.int)(unsafe.Pointer(&ints[0])))
 	if ret != 0 {
 		return ints, fmt.Errorf("embedding failed")
 	}
@@ -169,14 +207,97 @@ func (llm *Chatglm) Free() {
 	C.free_model(llm.pipeline)
 }
 
+func (llm *Chatglm) ModelType() string {
+	return C.GoString(C.get_model_type(llm.pipeline))
+}
+
+// allocateParams create GenerationOptions from c
 func allocateParams(opt *GenerationOptions) unsafe.Pointer {
 	return C.allocate_params(C.int(opt.MaxLength), C.int(opt.MaxContextLength), C.bool(opt.DoSample),
 		C.int(opt.TopK), C.float(opt.TopP), C.float(opt.Temperature), C.float(opt.RepetitionPenalty),
 		C.int(opt.NumThreads))
 }
 
+// freeParams
 func freeParams(params unsafe.Pointer) {
 	C.free_params(params)
+}
+
+// checkChatMessages check messages format
+func checkChatMessages(messages []*ChatMessage) error {
+	n := len(messages)
+	if n < 1 {
+		return fmt.Errorf("invalid chat messages size: %d", n)
+	}
+	isSys := messages[0].Role == RoleSystem
+
+	if !isSys && n%2 == 0 {
+		return fmt.Errorf("invalid chat messages size: %d", n)
+	}
+	if isSys && n%2 == 1 {
+		return fmt.Errorf("invalid chat messages size: %d", n)
+	}
+
+	for i, message := range messages {
+		if message.ToolCalls == nil {
+			continue
+		}
+
+		for j, toolCall := range message.ToolCalls {
+			if toolCall.Type == TypeCode && toolCall.Code == nil {
+				return fmt.Errorf("expect messages[%d].ToolCalls[%d].Code is not nil", i, j)
+			}
+			if toolCall.Type == TypeFunction && toolCall.Function == nil {
+				return fmt.Errorf("expect messages[%d].ToolCalls[%d].Function is not nil", i, j)
+			}
+		}
+	}
+	return nil
+}
+
+// allocateChatMessages covert []*ChatMessage in go to []C.ChatMessage in c++
+func allocateChatMessages(messages []*ChatMessage) ([]unsafe.Pointer, error) {
+	reverseMessages := make([]unsafe.Pointer, len(messages))
+	for i, message := range messages {
+		var reverseToolCalls []unsafe.Pointer
+		if message.ToolCalls != nil {
+			for _, toolCall := range message.ToolCalls {
+				var codeOrFunc unsafe.Pointer
+				if toolCall.Type == TypeCode {
+					codeOrFunc = C.create_code(C.CString(toolCall.Code.Input))
+				} else if toolCall.Type == TypeFunction {
+					codeOrFunc = C.create_function(
+						C.CString(toolCall.Function.Name), C.CString(toolCall.Function.Arguments))
+				}
+				toolCallPoint := C.create_tool_call(C.CString(toolCall.Type), codeOrFunc)
+				if toolCallPoint != nil {
+					reverseToolCalls = append(reverseToolCalls, toolCallPoint)
+				}
+			}
+		}
+		var pass *unsafe.Pointer
+		if len(reverseToolCalls) > 0 {
+			pass = &reverseToolCalls[0]
+		}
+		reverseMessages[i] = C.create_chat_message(
+			C.CString(message.Role), C.CString(message.Content), pass, C.int(len(reverseToolCalls)))
+	}
+	return reverseMessages, nil
+}
+
+func removeSpecialTokens(data string) string {
+	output := strings.ReplaceAll(data, "[MASK]", "")
+	output = strings.ReplaceAll(output, "[gMASK]", "")
+	output = strings.ReplaceAll(output, "[sMASK]", "")
+	output = strings.ReplaceAll(output, "sop", "")
+	output = strings.ReplaceAll(output, "eop", "")
+	output = strings.Replace(output, "<|assistant|>", "", 1)
+	output = strings.TrimSuffix(output, "<|assistant|>")
+	output = strings.ReplaceAll(output, "<|assistant|>", DELIMITER)
+	output = strings.TrimLeftFunc(output, func(r rune) bool {
+		return r == '\n' || r == ' '
+	})
+	return output
 }
 
 var (
@@ -196,6 +317,7 @@ func streamCallback(pipeline unsafe.Pointer, printableText *C.char) C.bool {
 	return C.bool(true)
 }
 
+// setStreamCallback add callback into global map callbacks
 func setStreamCallback(pipeline unsafe.Pointer, callback func(string) bool) {
 	m.Lock()
 	defer m.Unlock()

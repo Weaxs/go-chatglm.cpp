@@ -86,5 +86,6 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Test
+        # only need AVX
         run: |
-          CMAKE_ARGS="-DGGML_F16C=ON -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON" make BUILD_TYPE=metal test
+          CMAKE_ARGS="-DGGML_F16C=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF" make BUILD_TYPE=metal test

@@ -21,8 +21,8 @@ ifeq ($(UNAME_S),Darwin)
 	ifneq ($(UNAME_P),arm)
 		SYSCTL_M := $(shell sysctl -n hw.optional.arm64 2>/dev/null)
 		ifeq ($(SYSCTL_M),1)
-			UNAME_P := arm
-			UNAME_M := arm64
+#			UNAME_P := arm
+#			UNAME_M := arm64
 			warn := $(warning Your arch is announced as x86_64, but it seems to actually be ARM64. Not fixing that can lead to bad performance. For more info see: https://github.com/ggerganov/whisper.cpp/issues/66\#issuecomment-1282546789)
 		endif
 	endif
@@ -47,6 +47,7 @@ GGML_CUDA_OBJ_PATH=third_party/ggml/src/CMakeFiles/ggml.dir/ggml-cuda.cu.o
 # feel free to update the Makefile for your architecture and send a pull request or issue
 ifeq ($(UNAME_M),$(filter $(UNAME_M),x86_64 i686))
 	# Use all CPU extensions that are available:
+	CMAKE_ARGS += -DCMAKE_C_FLAGS=-march=native -DGGML_F16C=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF
 	CXXFLAGS += -march=native -mtune=native
 endif
 ifneq ($(filter ppc64%,$(UNAME_M)),)

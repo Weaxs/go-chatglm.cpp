@@ -87,4 +87,4 @@ jobs:
         run: go mod tidy
       - name: Test
         run: |
-          CMAKE_ARGS="-DCMAKE_C_FLAGS=-march=native -DGGML_F16C=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF" make BUILD_TYPE=metal test
+          make BUILD_TYPE=metal test

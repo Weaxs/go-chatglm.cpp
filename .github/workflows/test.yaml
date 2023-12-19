@@ -87,4 +87,4 @@ jobs:
         run: go mod tidy
       - name: Test
         run: |
-          export GGML_AVX2=OFF GGML_FMA=OFF GGML_F16C=OFF && make BUILD_TYPE=metal test
+          CMAKE_ARGS="-DGGML_F16C=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF" make BUILD_TYPE=metal test
